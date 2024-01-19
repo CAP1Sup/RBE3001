@@ -162,22 +162,26 @@ classdef Robot < OM_X_arm
         % Takes a 1x4 array of joint variables (in degrees) to be sent to the actuators
         % Optional parameter that specifies the desired travel time (in milliseconds)
         function set_joint_vars(varargin)
+            % Set the self variable for better readability
+            self = varargin{1};
+
             % Check the number of input arguments
-            if length(varargin) ~= 1 && length(varargin) ~= 2
+            if length(varargin) ~= 2 && length(varargin) ~= 3
                 error("Incorrect number of input arguments. Expected 1 or 2.");
             end
 
             % Extract joint variables
-            jointVars = varargin{1};
+            jointVars = varargin{2};
 
             % Validate jointVars array size
-            if length(jointVars) ~= 4
-                error("Joint variables must be a 1x4 array.")
+            if size(jointVars, 1) ~= 1 || size(jointVars, 2) ~= 4
+
+                error("Joint variables must be a 1x4 array.");
             end
 
             % Check for optional travel time argument
-            if length(varargin) == 2
-                self.writeTime(varargin{2} / 1000);
+            if length(varargin) == 3
+                self.writeTime(varargin{3} / 1000);
             end
 
             % Set the joint angles
