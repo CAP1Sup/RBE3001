@@ -139,6 +139,18 @@ classdef Robot < OM_X_arm
             self.bulkReadWrite(DX_XM430_W350.VEL_LEN, DX_XM430_W350.GOAL_VELOCITY, vels);
         end
 
-        
+        % Returns a 2x4 array with joint positions and velocities
+        % Position and velocities default to zero
+        % GETPOS and GETVEL control if their data is included
+        function readings = read_joint_vars(self, GETPOS, GETVEL)
+            readings = zeros(2, 4);
+            if GETPOS
+                readings(1, :) = (self.bulkReadWrite(DX_XM430_W350.POS_LEN, DX_XM430_W350.CURR_POSITION) - DX_XM430_W350.TICK_POS_OFFSET) ./ DX_XM430_W350.TICKS_PER_DEG;
+            end
+            if GETVEL
+                readings(2, :) = self.bulkReadWrite(DX_XM430_W350.VEL_LEN, DX_XM430_W350.CURR_VELOCITY) ./ DX_XM430_W350.TICKS_PER_ANGVEL;
+            end
+        end
+     
     end % end methods
 end % end class 
