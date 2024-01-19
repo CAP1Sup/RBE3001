@@ -1,20 +1,26 @@
 %% Setup robot
-displayTime = 5; % Defines the travel time
+travelTime = 1; % Defines the travel time
 robot = Robot(); % Creates robot object
-waypoint = [0,0,0,0];
+waypoint = [45,0,0,0]; % Give the angle for each position
 %% Program
-readPos = robot.read_joint_vars(true , false);
-readVel = robot.read_joint_vars(false , true);
-tic;
+tic; % Start timer
+initPos = robot.read_joint_vars(true , false);
+initVel = robot.read_joint_vars(false , true);
 
-robot.set_joint_vars(waypoint)
+readPos = [toc, initPos(1,:)];
+readVel = [toc, initVel(1,:)];
+
+robot.set_joint_vars(waypoint,(travelTime*1000));
  
-while toc <= displayTime
-     pos2 = robot.read_joint_vars(true , false);
-     readPos = cat(1,readPos,pos2);
-     vel2 = robot.read_joint_vars(false , true);
-     readVel = cat(1,readVel,vel2);
+while toc <= travelTime
+     currPos = robot.read_joint_vars(true , false);
+     P = [toc, currPos(1,:)];
+     readPos = cat(1,readPos,P);
+
+     currVel = robot.read_joint_vars(false , true);
+     V = [toc, currVel(1,:)];
+     readVel = cat(1,readVel,V);
+     
 end
      writematrix(readPos,'position.csv')
      writematrix(readVel,'velocity.csv')
-     
