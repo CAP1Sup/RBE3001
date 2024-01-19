@@ -42,8 +42,9 @@ classdef Robot < OM_X_arm
         % time [double] - total profile time in s. If 0, the profile will be disabled (be extra careful).
         % acc_time [double] - the total acceleration time (for ramp up and ramp down individually, not combined)
         % acc_time is an optional parameter. It defaults to time/3.
-      
+
         function writeTime(self, time, acc_time)
+
             if (~exist("acc_time", "var"))
                 acc_time = time / 3;
             end
@@ -59,16 +60,18 @@ classdef Robot < OM_X_arm
             self.bulkReadWrite(DX_XM430_W350.PROF_ACC_LEN, DX_XM430_W350.PROF_ACC, acc_time_ms);
             self.bulkReadWrite(DX_XM430_W350.PROF_VEL_LEN, DX_XM430_W350.PROF_VEL, time_ms);
         end
-        
+
         % Sets the gripper to be open or closed
         % Feel free to change values for open and closed positions as desired (they are in degrees)
         % open [boolean] - true to set the gripper to open, false to close
         function writeGripper(self, open)
+
             if open
                 self.gripper.writePosition(-35);
             else
                 self.gripper.writePosition(55);
             end
+
         end
 
         % Sets position holding for the joints on or off
@@ -95,8 +98,9 @@ classdef Robot < OM_X_arm
         % "curr position": Current-based Position Control Mode
         % "pwm voltage": PWM Control Mode
         function writeMode(self, mode)
+
             switch mode
-                case {'current', 'c'} 
+                case {'current', 'c'}
                     writeMode = DX_XM430_W350.CURR_CNTR_MD;
                 case {'velocity', 'v'}
                     writeMode = DX_XM430_W350.VEL_CNTR_MD;
@@ -125,8 +129,8 @@ classdef Robot < OM_X_arm
         % readings [3x4 double] - The joints' positions, velocities,
         % and efforts (deg, deg/s, mA)
         function readings = getJointsReadings(self)
-            readings = zeros(3,4);
-            
+            readings = zeros(3, 4);
+
             readings(1, :) = (self.bulkReadWrite(DX_XM430_W350.POS_LEN, DX_XM430_W350.CURR_POSITION) - DX_XM430_W350.TICK_POS_OFFSET) ./ DX_XM430_W350.TICKS_PER_DEG;
             readings(2, :) = self.bulkReadWrite(DX_XM430_W350.VEL_LEN, DX_XM430_W350.CURR_VELOCITY) ./ DX_XM430_W350.TICKS_PER_ANGVEL;
             readings(3, :) = self.bulkReadWrite(DX_XM430_W350.CURR_LEN, DX_XM430_W350.CURR_CURRENT) ./ DX_XM430_W350.TICKS_PER_mA;
@@ -144,13 +148,42 @@ classdef Robot < OM_X_arm
         % GETPOS and GETVEL control if their data is included
         function readings = read_joint_vars(self, GETPOS, GETVEL)
             readings = zeros(2, 4);
+
             if GETPOS
                 readings(1, :) = (self.bulkReadWrite(DX_XM430_W350.POS_LEN, DX_XM430_W350.CURR_POSITION) - DX_XM430_W350.TICK_POS_OFFSET) ./ DX_XM430_W350.TICKS_PER_DEG;
             end
+
             if GETVEL
                 readings(2, :) = self.bulkReadWrite(DX_XM430_W350.VEL_LEN, DX_XM430_W350.CURR_VELOCITY) ./ DX_XM430_W350.TICKS_PER_ANGVEL;
             end
+
         end
-     
+
+        % Takes a 1x4 array of joint variables (in degrees) to be sent to the actuators
+        % Optional parameter that specifies the desired travel time (in milliseconds)
+        function set_joint_vars(varargin)
+            % Check the number of input arguments
+            if length(varargin) ~= 1 && length(varargin) ~= 2
+                error("Incorrect number of input arguments. Expected 1 or 2.");
+            end
+
+            % Extract joint variables
+            jointVars = varargin{1};
+
+            % Validate jointVars array size
+            if length(jointVars) ~= 4
+                error("Joint variables must be a 1x4 array.")
+            end
+
+            % Check for optional travel time argument
+            if length(varargin) == 2
+                self.writeTime(varargin{2} / 1000);
+            end
+
+            % Set the joint angles
+            self.writeJoints(jointVars);
+        end
+
     end % end methods
-end % end class 
+
+end % end class
