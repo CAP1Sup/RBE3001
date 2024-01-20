@@ -1,5 +1,5 @@
 %% Setup robot
-travelTime = 1; % Defines the travel time
+travelTime = 3; % Defines the travel time
 robot = Robot(); % Creates robot object
 waypoint = [45,0,0,0]; % Give the angle for each position
 %% Program
@@ -24,3 +24,34 @@ while toc <= travelTime
 end
      writematrix(readPos,'position.csv')
      writematrix(readVel,'velocity.csv')
+     
+%%Plotting
+tiledlayout(2,2);
+%Base Position Plotting
+nexttile
+     plot(readPos(:,1),readPos(:,2));
+     title('Base Position Over Time (Base 0 to 45 deg)')
+     xlabel('Time (s)')
+     ylabel('Pos(deg)')
+     axis([0 travelTime 0 45])
+%Shoulder Position Plotting
+nexttile
+     plot(readPos(:,1),readPos(:,3));
+     title('Shoulder Position Over Time (Base 0 to 45 deg)')
+     xlabel('Time (s)')
+     ylabel('Pos(deg)')
+     axis([0 travelTime 0 45])
+%Elbow Position Plotting
+nexttile
+     plot(readPos(:,1),readPos(:,4));
+     title('Elbow Position Over Time (Base 0 to 45 deg)')
+     xlabel('Time (s)')
+     ylabel('Pos(deg)')
+     axis([0 travelTime 0 45])
+%Wrist Position Plotting
+nexttile
+     plot(readPos(:,1),readPos(:,5));
+     title('Wrist Position Over Time (Base 0 to 45 deg)')
+     xlabel('Time (s)')
+     ylabel('Pos(deg)')
+     axis([0 travelTime 0 45])
