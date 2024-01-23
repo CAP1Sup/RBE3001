@@ -1,7 +1,8 @@
 %% Setup robot
 travelTime = 3; % Defines the travel time
 robot = Robot(); % Creates robot object
-waypoint = [45,-55,-50,90]; % Give the angle for each position
+waypoint = [-80,-70,5,0]; % Give the angle for each position
+%waypoint = [45,0,0,0];
 home = [0,0,0,0]; % Home 0,0,0,0 position
 deltaT= [0,0]; % initialize change in time matrix
 trialNum = 0; %% SET THIS NUMBER FOR EACH INDIVIDUAL TRIAL
@@ -27,7 +28,7 @@ while toc <= travelTime
      timeVSdeltaT = [toc, abs(timeVSdeltaT(1)-toc)*1000];% toc (seconds) deltaToc (milliseconds)
      deltaT = cat(1,deltaT,timeVSdeltaT);
 end
-     writematrix(positionData,'position.csv');% Always write current readings to position.csv
+     writematrix(positionData,'45DegPosition.csv');% Always write current readings to position.csv
      writematrix(deltaT(2:end,:),'deltaT.csv'); % 1st line is 0,0 so ignore this line and start from 2nd
 
 %% Trial Position Writing To CSV
@@ -60,6 +61,7 @@ nexttile
      xlabel('Time (s)')
      ylabel('Pos(deg)')
      axis([0 travelTime 0 45])
+     set(gca,'fontsize',16)
 % Shoulder Position Plotting
 nexttile
      plot(positionData(:,1),positionData(:,3));
@@ -67,6 +69,7 @@ nexttile
      xlabel('Time (s)')
      ylabel('Pos(deg)')
      axis([0 travelTime 0 45])
+     set(gca,'fontsize',16)
 % Elbow Position Plotting
 nexttile
      plot(positionData(:,1),positionData(:,4));
@@ -74,6 +77,7 @@ nexttile
      xlabel('Time (s)')
      ylabel('Pos(deg)')
      axis([0 travelTime 0 45])
+     set(gca,'fontsize',16)
 % Wrist Position Plotting
 nexttile
      plot(positionData(:,1),positionData(:,5));
@@ -81,6 +85,7 @@ nexttile
      xlabel('Time (s)')
      ylabel('Pos(deg)')
      axis([0 travelTime 0 45])
+     set(gca,'fontsize',16)
 end
 
 figure(2);
@@ -91,6 +96,7 @@ nexttile
      title('Incremental Timesteps Between Readings')
      xlabel('Time (ms)')
      ylabel('count')
+set(gca,'fontsize',16)
 % 3Layer Plot
 nexttile
     plot(trial1(:,1),trial1(:,2));
@@ -103,6 +109,7 @@ nexttile
     xlabel('Time (s)')
     ylabel('Pos(deg)')
     axis([0 travelTime 0 80])
+    set(gca,'fontsize',16)
 
 figure(3);
 tiledlayout(2,2)
@@ -113,6 +120,7 @@ nexttile
      xlabel('Time (s)')
      ylabel('Pos(deg)')
      axis([0 travelTime min(positionData(:,2)) max(positionData(:,2))])
+     set(gca,'fontsize',16)
 
 % Shoulder Position Plotting
 nexttile
@@ -121,6 +129,7 @@ nexttile
      xlabel('Time (s)')
      ylabel('Pos(deg)')
      axis([0 travelTime min(positionData(:,3)) max(positionData(:,3))])
+     set(gca,'fontsize',16)
 
 % Elbow Position Plotting
 nexttile
@@ -129,6 +138,7 @@ nexttile
      xlabel('Time (s)')
      ylabel('Pos(deg)')
      axis([0 travelTime min(positionData(:,4)) max(positionData(:,4))])
+     set(gca,'fontsize',16)
 
 % Wrist Position Plotting
 nexttile
@@ -137,5 +147,5 @@ nexttile
      xlabel('Time (s)')
      ylabel('Pos(deg)')
      axis([0 travelTime min(positionData(:,5)) max(positionData(:,5))])
-
+set(gca,'fontsize',16)
 
