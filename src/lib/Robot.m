@@ -188,9 +188,9 @@ classdef Robot < OM_X_arm
             self.writeJoints(jointVars);
         end
 
-        % Takes a 1x4 array of DH parameters
+        % Takes a 1x4 array of DH parameters in form: [theta, d, a, alpha]
         % Returns a 4x4 frame transformational matrix
-        function dhMat = dh2mat(DHrow) % [theta, d, a, alpha]
+        function dhMat = dh2mat(self, DHrow)
             theta = DHrow(1, 1);
             d = DHrow(1, 2);
             a = DHrow(1, 3);
