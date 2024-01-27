@@ -202,6 +202,32 @@ classdef Robot < OM_X_arm
                      0 0 0 1];
         end % dh2mat
 
+        % Takes in an nx4 array corresponding to the n rows of the full DH parameter table with the initial frame
+        % Each joint gets a 4x4 homogenous matrix that gives the global orientation and position of the joint
+        %  Outputs a (4x4)xn array where “n” is the number of joints
+        function dhfk_mats = dh2fk(self, DHparams, initialFrame)
+            % Number of joints
+            n = size(DHparams, 1);
+
+            % Initialize array to hold transformation matrices
+            dhfk_mats = zeros(4, 4, n);
+
+            % Initialize the transformation as an identity matrix
+            dhfk_prev = initialFrame;
+
+            for joint_index = 1:n
+                % Compute the transformation matrix for the current joint
+                dhfk_current = self.dh2mat(DHparams(joint_index, :));
+
+                % Accumulate the transformation
+                dhfk_prev = dhfk_prev * dhfk_current;
+
+                % Store the transformation in the output array
+                dhfk_mats(:, :, joint_index) = dhfk_prev;
+            end
+
+        end % dh2fk
+
     end % end methodsx
 
 end % end class
