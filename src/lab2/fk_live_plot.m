@@ -1,5 +1,5 @@
 %% Setup robot
-travelTime = 5; % Defines the travel time
+travelTime = 10; % Defines the travel time
 model = Model(); % Creates model object
 waypoint = [45, -55, -50,  90;
             20,  20,  20,  20;
@@ -7,7 +7,7 @@ waypoint = [45, -55, -50,  90;
            -80, -70,   5,   0;
            -30,  30,  10,  -45]; % Give the angle for each position
 home = [0,0,0,0]; % Home 0,0,0,0 position
-trialNum = 5; %% SET THIS NUMBER FOR EACH INDIVIDUAL TRIAL
+trialNum = 1; %% SET THIS NUMBER FOR EACH INDIVIDUAL TRIAL
 
 %% Move the robot back to the home
 model.robot.set_joint_vars(home, 3000);
