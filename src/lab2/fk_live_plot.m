@@ -14,18 +14,22 @@ model.robot.set_joint_vars(home, 3000);
 pause(3);
 
 %% Create the plot, perform the movement
-robotPlot = model.new_arm_plot();
+close all
+figure(1)
+title("3D Arm Live Model at Position " + trialNum)
+xlabel("X (mm)");
+ylabel("Y (mm)");
+zlabel("Z (mm)");
+grid on
+set(gca,'fontsize',16)
+hold on
+[robotPlot, xQPlot, yQPlot, zQPlot] = model.new_arm_plots();
+hold off
 model.robot.set_joint_vars(waypoint(trialNum, :), travelTime*1000);
 
 % Start the timer
 tic;
 while toc <= travelTime
     joint_pos = model.robot.read_joint_vars(true, false);
-    model.plot_arm(joint_pos(1, :), robotPlot);
-    xlabel('x pos (mm)')
-    ylabel('y pos (mm)')
-    zlabel('z pos (mm)')
-    grid("on")
-    title("3D arm model at position " + trialNum)
-    set(gca,'fontsize',16)
+    model.plot_arm(joint_pos(1, :), robotPlot, xQPlot, yQPlot, zQPlot);
 end
