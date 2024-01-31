@@ -5,7 +5,7 @@ waypoint = [45, -55, -50,  90;
             20,  20,  20,  20;
             10, -20,  15, -12;
            -80, -70,   5,   0;
-           -30,  30,  10,  45]; % Give the angle for each position
+           -30,  30,  10,  -45]; % Give the angle for each position
 home = [0,0,0,0]; % Home 0,0,0,0 position
 trialNum = 1; %% SET THIS NUMBER FOR EACH INDIVIDUAL TRIAL
 
@@ -17,11 +17,12 @@ pause(3);
 close all
 figure(1)
 title("3D Arm Live Model at Position " + trialNum)
-xlabel("X");
-ylabel("Y");
-zlabel("Z");
-hold on
+xlabel("X (mm)");
+ylabel("Y (mm)");
+zlabel("Z (mm)");
 grid on
+set(gca,'fontsize',16)
+hold on
 [robotPlot, xQPlot, yQPlot, zQPlot] = model.new_arm_plots();
 hold off
 model.robot.set_joint_vars(waypoint(trialNum, :), travelTime*1000);
