@@ -260,7 +260,10 @@ classdef Robot < OM_X_arm
             L3 = 133.4;
 
             %side lengths of the triangle
-            a = sqrt(power((sqrt(x ^ 2 + y ^ 2) - L3 * cos(alpha)), 2) + power((sqrt(z + L3 * sin(alpha) - 96.326)), 2));
+            % a = sqrt(((sqrt(x^2 + y^2))-L3*cos(alpha))^2 + (z+L3*sin(alpha)-96.326)^2);
+            h = sqrt(x ^ 2 + y ^ 2) - L3 * cos(alpha);
+            g = z + L3 * sin(alpha) - 96.326;
+            a = sqrt(h ^ 2 + g ^ 2);
             b = 124; % L2
             c = sqrt(24 ^ 2 + 128 ^ 2); % L1
 
@@ -277,6 +280,9 @@ classdef Robot < OM_X_arm
                 B = acos((a ^ 2 + c ^ 2 - b ^ 2) / (2 * a * c));
             end
 
+            beta = atan2((z + L3 * sin(alpha) - 96.326), (sqrt(x ^ 2 + y ^ 2) - L3 * cos(alpha)));
+            theta = atan2(24, 128);
+
             beta = atan2((z + sin(alpha) - 96.326), (sqrt(x ^ 2 + y ^ 2) - cos(alpha)));
             theta = atan2(24, 128);
 
@@ -286,10 +292,17 @@ classdef Robot < OM_X_arm
                 q1 = atan2(y, x);
             end
 
-            q2 = pi / 2 - B - beta + theta;
-            q3 = A - pi / 2 - theta;
-            q4 = alpha - q3 - q2; % this is wrong
-            jointParam = [q1, q2, q3, q4];
+            disp([a, b, c, A, B, beta, theta, h, g]);
+
+            q2 = pi / 2 - B - beta - theta;
+            q3 = pi / 2 - A + theta;
+            q4 = alpha - q3 - q2;
+
+            if abs(q4) > pi / 2
+                error("Cannot be reached, wrist joint angle does not exist");
+            end
+
+            jointParam = rad2deg([q1, q2, q3, q4]);
         end % task2ik
 
     end % end methodsx
