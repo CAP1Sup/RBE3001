@@ -241,6 +241,61 @@ classdef Robot < OM_X_arm
         function fk = joints2fk(self, joint_pos)
             fk = self.dh2fk(self.getDHTable(joint_pos));
         end % joints2fk
+
+
+        % Takes a 1x4 vector of x,y,z position in mm and orientation angle,
+        % alpha in degrees
+        % Ouputs a 1x4 vector of joint angles
+        function jointParam = task2ik(~, pos_arr)
+            x = pos_arr(1);
+            y = pos_arr(2);
+            z = pos_arr(3);
+            alpha = deg2rad(pos_arr(4));
+            L1x = 24;
+            L1y = 128;
+            L2 = 124;
+            L3 = 133.4;
+
+            % side lengths of the triangle
+            %a = sqrt(((sqrt(x^2 + y^2))-L3*cos(alpha))^2 + (z+L3*sin(alpha)-96.326)^2);
+            planar_x = sqrt(x^2 + y^2)-L3*cos(alpha);
+            planar_y = z+L3*sin(alpha)-96.326;
+            a = sqrt(planar_x^2 + planar_y^2);
+            L1 = sqrt(L1x^2 + L1y^2); % L1
+
+            % angles of the triangle
+            if abs((L2^2 + L1^2 - a^2)/(2*L2*L1)) > 1
+                error("Cannot be reached, elbow joint angle does not exist");
+            else 
+                A = acos((L2^2 + L1^2 - a^2)/(2*L2*L1));
+            end 
+            if abs((a^2 + L1^2 - L2^2)/(2*a*L1)) > 1
+                error("Cannot be reached, shoulder joint angle does not exist");
+            else
+                B = acos((a^2 + L1^2 - L2^2)/(2*a*L1));
+            end
+            beta = atan2(planar_y,planar_x);
+            shoulder_offset = atan2(L1x,L1y);
+
+            if x==0 && y==0
+                q1 = 0;
+            else 
+                q1 = atan2(y,x);
+            end
+
+
+            disp([a,L2,L1,A,B,beta,shoulder_offset,planar_x,planar_y]);
+
+            q2 = pi/2 - B - beta - shoulder_offset;
+            q3 = pi/2 - A + shoulder_offset;
+            q4 = alpha - q3 - q2;
+            if abs(q4) > pi/2
+                error("Cannot be reached, wrist joint angle does not exist");
+            end
+
+
+            jointParam = rad2deg([q1, q2, q3, q4]);
+        end % task2ik
     
     end % end methodsx
 end % end class 
