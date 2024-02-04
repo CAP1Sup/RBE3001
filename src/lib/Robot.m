@@ -6,7 +6,7 @@ classdef Robot < OM_X_arm
     % Hopefully, you should only need what's in this class to accomplish everything.
     % But feel free to poke around!
     properties
-        mDim; % Stores the robot link dimentions (mm)
+        mDim; % Stores the robot link dimensions (mm)
         mOtherDim; % Stores extraneous second link dimensions (mm)
         initialTranslation = [0, 0, 36.076]; % [x, y, z]
     end
@@ -248,6 +248,49 @@ classdef Robot < OM_X_arm
         function fk = joints2fk(self, joint_pos)
             fk = self.dh2fk(self.getDHTable(joint_pos));
         end % joints2fk
+
+        % Takes a 1x4 vector of x,y,z position in mm and orientation angle,
+        % alpha in radians
+        % Ouputs a 1x4 vector of joint angles
+        function jointParam = task2ik(~, pos_arr)
+            x = pos_arr(1);
+            y = pos_arr(2);
+            z = pos_arr(3);
+            alpha = pos_arr(4);
+            L3 = 133.4;
+
+            %side lengths of the triangle
+            a = sqrt(power((sqrt(x ^ 2 + y ^ 2) - L3 * cos(alpha)), 2) + power((sqrt(z + L3 * sin(alpha) - 96.326)), 2));
+            b = 124; % L2
+            c = sqrt(24 ^ 2 + 128 ^ 2); % L1
+
+            %angles of the triangle
+            if abs((b ^ 2 + c ^ 2 - a ^ 2) / (2 * b * c)) > 1
+                error("Cannot be reached, elbow joint angle does not exist");
+            else
+                A = acos((b ^ 2 + c ^ 2 - a ^ 2) / (2 * b * c));
+            end
+
+            if abs((a ^ 2 + c ^ 2 - b ^ 2) / (2 * a * c)) > 1
+                error("Cannot be reached, shoulder joint angle does not exist");
+            else
+                B = acos((a ^ 2 + c ^ 2 - b ^ 2) / (2 * a * c));
+            end
+
+            beta = atan2((z + sin(alpha) - 96.326), (sqrt(x ^ 2 + y ^ 2) - cos(alpha)));
+            theta = atan2(24, 128);
+
+            if x == 0 && y == 0
+                q1 = 0;
+            else
+                q1 = atan2(y, x);
+            end
+
+            q2 = pi / 2 - B - beta + theta;
+            q3 = A - pi / 2 - theta;
+            q4 = alpha - q3 - q2; % this is wrong
+            jointParam = [q1, q2, q3, q4];
+        end % task2ik
 
     end % end methodsx
 
