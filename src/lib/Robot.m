@@ -250,35 +250,40 @@ classdef Robot < OM_X_arm
         end % joints2fk
 
         % Takes a 1x4 vector of x,y,z position in mm and orientation angle,
-        % alpha in radians
+        % alpha in degrees
         % Ouputs a 1x4 vector of joint angles
         function jointParam = task2ik(~, pos_arr)
             x = pos_arr(1);
             y = pos_arr(2);
             z = pos_arr(3);
-            alpha = pos_arr(4);
+            alpha = deg2rad(pos_arr(4));
+            L1x = 24;
+            L1y = 128;
+            L2 = 124;
             L3 = 133.4;
 
-            %side lengths of the triangle
-            % a = sqrt(((sqrt(x^2 + y^2))-L3*cos(alpha))^2 + (z+L3*sin(alpha)-96.326)^2);
-            h = sqrt(x ^ 2 + y ^ 2) - L3 * cos(alpha);
-            g = z + L3 * sin(alpha) - 96.326;
-            a = sqrt(h ^ 2 + g ^ 2);
-            b = 124; % L2
-            c = sqrt(24 ^ 2 + 128 ^ 2); % L1
+            % side lengths of the triangle
+            %a = sqrt(((sqrt(x^2 + y^2))-L3*cos(alpha))^2 + (z+L3*sin(alpha)-96.326)^2);
+            planar_x = sqrt(x ^ 2 + y ^ 2) - L3 * cos(alpha);
+            planar_y = z + L3 * sin(alpha) - 96.326;
+            a = sqrt(planar_x ^ 2 + planar_y ^ 2);
+            L1 = sqrt(L1x ^ 2 + L1y ^ 2); % L1
 
-            %angles of the triangle
-            if abs((b ^ 2 + c ^ 2 - a ^ 2) / (2 * b * c)) > 1
+            % angles of the triangle
+            if abs((L2 ^ 2 + L1 ^ 2 - a ^ 2) / (2 * L2 * L1)) > 1
                 error("Cannot be reached, elbow joint angle does not exist");
             else
-                A = acos((b ^ 2 + c ^ 2 - a ^ 2) / (2 * b * c));
+                A = acos((L2 ^ 2 + L1 ^ 2 - a ^ 2) / (2 * L2 * L1));
             end
 
-            if abs((a ^ 2 + c ^ 2 - b ^ 2) / (2 * a * c)) > 1
+            if abs((a ^ 2 + L1 ^ 2 - L2 ^ 2) / (2 * a * L1)) > 1
                 error("Cannot be reached, shoulder joint angle does not exist");
             else
-                B = acos((a ^ 2 + c ^ 2 - b ^ 2) / (2 * a * c));
+                B = acos((a ^ 2 + L1 ^ 2 - L2 ^ 2) / (2 * a * L1));
             end
+
+            beta = atan2(planar_y, planar_x);
+            shoulder_offset = atan2(L1x, L1y);
 
             beta = atan2((z + L3 * sin(alpha) - 96.326), (sqrt(x ^ 2 + y ^ 2) - L3 * cos(alpha)));
             theta = atan2(24, 128);
@@ -294,8 +299,10 @@ classdef Robot < OM_X_arm
 
             disp([a, b, c, A, B, beta, theta, h, g]);
 
-            q2 = pi / 2 - B - beta - theta;
-            q3 = pi / 2 - A + theta;
+            disp([a, L2, L1, A, B, beta, shoulder_offset, planar_x, planar_y]);
+
+            q2 = pi / 2 - B - beta - shoulder_offset;
+            q3 = pi / 2 - A + shoulder_offset;
             q4 = alpha - q3 - q2;
 
             if abs(q4) > pi / 2
