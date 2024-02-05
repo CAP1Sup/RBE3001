@@ -1,39 +1,127 @@
 %% Choose poses for robot to move between
-poses = [200,  0,   100,  0;
-         100,  200, 300, -90;
-         150, -150, 10,   90];
-move_time = 3; % seconds
+location = [200,  0,   100,  0;
+         100,  200, 350, -90;
+         50,      -70, 300, -45;
+         200,  0,   100,  0];
+travelTime = 3; % seconds
+maxTrials = 3; %% SET THIS NUMBER FOR EACH INDIVIDUAL TRIAL
+currTrial = 1; % initalize trial start
+
+plot2d = false; % boolean to plot grpahs
+plot3d = false; % boolean to plot graphs
+qplot = true; % booleab to plot graphs
 
 %% Create model and robot
+
 model = Model();
-model.robot.writeTime(move_time);
+model.robot.writeTime(travelTime);
 
-% Seed the fks variable with the fks from the first pose
-% Maybe preallocate?
-jointsVsT = [model.robot.task2ik(pose(1))];
-fksVsT = [model.robot.joints2fk(jointsVsT(1))];
-times = [0];
+ik_pose = model.robot.task2ik(location(currTrial,:));
+model.robot.set_joint_vars(ik_pose,travelTime*1000);
+disp(ik_pose);
+pause(travelTime);
 
+initPos = model.robot.read_joint_vars(true , false); % bool(pos,vel)
 % Start timer
 tic;
 
-% Loop through the poses
-for pose = transpose(poses)
-    model.robot.set_joint_vars(task2ik(pose));
+positionData = [toc, initPos(1,:)];
+poseData = [toc, ik_pose(1,:)];
 
-    move_start_time = toc;
-    while toc <= move_start_time + move_time
-        % Calculate the values
-        joint_vars = model.robot.read_joint_vars(true, false);
-        fks = model.robot.joints2fk(joint_vars(1));
+    %% 3D plot
+ if plot3d 
 
-        % Save them in the accumulators
-        jointsVsT = [jointsVsT; joint_vars(1)];
-        fksVsT = [fksVsT; fks];
-        times = [times; toc];
-    end % Currently moving
-end % pose loop
+        figure(2)
+        title("3D Arm Live Model at Position ");
+        xlabel("X (mm)");
+        ylabel("Y (mm)");
+        zlabel("Z (mm)");
+        grid on
+        set(gca,'fontsize',16)
+        hold on
+        [robotPlot, xQPlot, yQPlot, zQPlot] = model.new_arm_plots();
+        hold off
+ end
 
-% XYZ position plot
-plot(times, fksVsT(1,4,5));
+    %% Movement For Trajectory 
+while currTrial <= maxTrials
+ik_pose = model.robot.task2ik(location(currTrial+1,:));
+      model.robot.set_joint_vars(ik_pose,travelTime*1000);
+      J = toc + travelTime;
+
+ 
+
+      while toc <= J
+
+
+            if plot3d 
+                joint_vars = model.robot.read_joint_vars(true, false);
+                fk = model.plot_arm(joint_vars(1, :), robotPlot, xQPlot, yQPlot, zQPlot);
+                hold on
+                scatter3(fk(1,4,4),fk(2,4,4),fk(3,4,4),100,"cyan");
+                hold off
+                
+                       
+            else 
+
+                joint_vars = model.robot.read_joint_vars(true, false);
+
+                positions = [toc, joint_vars(1,:)];
+
+                positionData = cat(1,positionData,positions);
+
+                pose = [toc, ik_pose(1,:)];
+
+                poseData = cat(1,poseData,pose(1,:));
+
+            end
+
+      end
+
+      currTrial = currTrial + 1;
+
+end
+    %% 2d plot 
+if plot2d 
+
+ figure(1)  
+
+    plot(positionData(2:end,1),positionData(2:end,2),'LineWidth',2);
+    hold on
+    plot(positionData(2:end,1),positionData(2:end,3),'LineWidth',2);
+    plot(positionData(2:end,1),positionData(2:end,4),'LineWidth',2);
+    plot(positionData(2:end,1),positionData(2:end,5),'LineWidth',2);
+
+    hold off
+    legend('Base angle', 'Shoulder Angle', 'Elbow Angle','Wrist Angle', 'Location', 'northwest')
+    title('Joint Angles Trajectory of a Triangle From Inverse Kinematics')
+    xlabel('Time (s)')
+    ylabel('Pos (deg)')
+    axis([0 max(positionData(:,1)) -90 90])
+    set(gca,'fontsize',16)
+
+end
+
+    %% q[1-4] plot
+if qplot
+
+    figure(3)
+
+    plot(poseData(2:end,1),poseData(2:end,2),'LineWidth',2);
+    hold on
+    plot(poseData(2:end,1),poseData(2:end,3),'LineWidth',2);
+    plot(poseData(2:end,1),poseData(2:end,4),'LineWidth',2);
+    plot(poseData(2:end,1),poseData(2:end,5),'LineWidth',2);
+
+    hold off
+    legend('q1 (Base angle) ', 'q2 (Shoulder Angle) ', 'q3 (Elbow Angle)','q4 (Wrist Angle)', 'Location', 'northwest')
+    title('q[1-4] Values From Inverse Kinematics of Triangle Trajectory')
+    xlabel('Time (s)')
+    ylabel('Pos (deg)')
+    axis([0 max(positionData(:,1)) -90 90])
+    set(gca,'fontsize',16)
+
+end
+
+
 
