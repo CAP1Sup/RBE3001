@@ -312,6 +312,31 @@ classdef Robot < OM_X_arm
             jointParam = rad2deg([q1, q2, q3, q4]);
         end % task2ik
 
-    end % end methodsx
+        % Takes 4x4 matrix of trajectory coefficients, with joints as rows
+        % and coefficients as columns, and the desired movement duration in
+        % seconds
+        % Returns joint angle data entries of format: [time, q1, q2, q3, q4]
+        function joint_pos_data = run_trajectory(self, traj_coef, move_dur)
+            tic;
+
+            while toc <= move_dur
+                time = toc;
+                q1 = polyval(flip(traj_coef(1, :), 2), time);
+                q2 = polyval(flip(traj_coef(2, :), 2), time);
+                q3 = polyval(flip(traj_coef(3, :), 2), time);
+                q4 = polyval(flip(traj_coef(4, :), 2), time);
+                self.set_joint_vars([q1, q2, q3, q4], 0);
+
+                if exist("joint_pos_data")
+                    joint_pos_data = [joint_pos_data; [time, q1, q2, q3, q4]];
+                else
+                    joint_pos_data = [[time, q1, q2, q3, q4]];
+                end % exists "joint_pos_data"
+
+            end % toc <= move_dur
+
+        end % run_trajectory
+
+    end % end methods
 
 end % end class
