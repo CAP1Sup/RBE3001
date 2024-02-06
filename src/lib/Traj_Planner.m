@@ -24,8 +24,8 @@ classdef Traj_Planner
                  1, final(t),   final(t)^2,   final(t)^3;
                  0, 1,        2*final(t),   3*final(t)^2;];
             B = [init(x); init(v); final(x); final(v)];
-            coefficients = mldivide(A,B)
+            coefficients = mldivide(A,B);
         end
-    end
+    end 
 end
 
