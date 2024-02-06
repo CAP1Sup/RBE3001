@@ -304,7 +304,7 @@ classdef Robot < OM_X_arm
             q4 = alpha - q3 - q2;
 
             % Quick sanity check on the wrist angle
-            if abs(q4) > pi / 2
+            if abs(q4) > pi / 2 + deg2rad(10)
                 error("Cannot be reached, wrist joint angle does not exist");
             end
 
