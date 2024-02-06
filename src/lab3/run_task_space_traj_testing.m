@@ -138,6 +138,10 @@ axis([0 max(joint_pos(:,1)) -10000 10000])
 set(gca,'fontsize',16);
 
 
+%% Save the joint angles over time
+save("task_space_angles", "joint_pos");
+
+
 % Conveience function to generate the task space trajectory coefficients
 function coeff = calc_t_coeff(robot, desired_pose, move_time)
     traj = Traj_Planner();

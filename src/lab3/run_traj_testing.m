@@ -137,6 +137,9 @@ ylabel('Accel (mm/s^2)')
 axis([0 max(joint_pos(:,1)) -10000 10000])
 set(gca,'fontsize',16);
 
+%% Save the joint angles over time
+save("joint_space_angles", "joint_pos");
+
 % Conveience function to generate the joint trajectory coefficients
 function coeff = calc_j_coeff(robot, desired_ang, move_time)
     traj = Traj_Planner();
