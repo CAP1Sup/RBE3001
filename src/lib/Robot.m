@@ -37,6 +37,11 @@ classdef Robot < OM_X_arm
             self.bulkReadWrite(DX_XM430_W350.POS_LEN, DX_XM430_W350.GOAL_POSITION, goals);
         end
 
+        % Gets the joint's goal positions
+        function goals = getJointPosGoals(self)
+            goals = (self.bulkReadWrite(DX_XM430_W350.POS_LEN, DX_XM430_W350.GOAL_POSITION) - DX_XM430_W350.TICK_POS_OFFSET) ./ DX_XM430_W350.TICKS_PER_DEG;
+        end
+
         % Creates a time based profile (trapezoidal) based on the desired times
         % This will cause writePosition to take the desired number of
         % seconds to reach the setpoint. Set time to 0 to disable this profile (be careful).
@@ -53,10 +58,10 @@ classdef Robot < OM_X_arm
             time_ms = time * DX_XM430_W350.MS_PER_S;
             acc_time_ms = acc_time * DX_XM430_W350.MS_PER_S;
 
-            disp("time")
-            disp(time_ms)
-            disp("acc time")
-            disp(acc_time_ms)
+            % disp("time")
+            % disp(time_ms)
+            % disp("acc time")
+            % disp(acc_time_ms)
 
             self.bulkReadWrite(DX_XM430_W350.PROF_ACC_LEN, DX_XM430_W350.PROF_ACC, acc_time_ms);
             self.bulkReadWrite(DX_XM430_W350.PROF_VEL_LEN, DX_XM430_W350.PROF_VEL, time_ms);
@@ -319,18 +324,20 @@ classdef Robot < OM_X_arm
         function joint_pos_data = run_trajectory(self, traj_coef, move_dur)
             tic;
 
-            while toc <= move_dur
+            while toc <= + move_dur
                 time = toc;
                 q1 = polyval(flip(traj_coef(1, :), 2), time);
                 q2 = polyval(flip(traj_coef(2, :), 2), time);
                 q3 = polyval(flip(traj_coef(3, :), 2), time);
                 q4 = polyval(flip(traj_coef(4, :), 2), time);
                 self.set_joint_vars([q1, q2, q3, q4], 0);
+                pause(0.01); % pause 0.01s so joints can catch up
+                joint_pos = self.read_joint_vars(true, false);
 
-                if exist("joint_pos_data")
-                    joint_pos_data = [joint_pos_data; [time, q1, q2, q3, q4]];
+                if exist("joint_pos_data", "var")
+                    joint_pos_data = [joint_pos_data; [time, joint_pos(1, :)]];
                 else
-                    joint_pos_data = [[time, q1, q2, q3, q4]];
+                    joint_pos_data = [time, joint_pos(1, :)];
                 end % exists "joint_pos_data"
 
             end % toc <= move_dur

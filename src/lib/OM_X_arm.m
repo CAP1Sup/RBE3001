@@ -6,8 +6,8 @@
 classdef OM_X_arm < handle
     properties
         % DX_XM430_W350 Servos
-        motor2_offset = -45; % Example offset, adjust as needed
-        motor3_offset = -48;
+        motor2_offset = 0; % Example offset, adjust as needed
+        motor3_offset = 0;
         motorsNum;
         motorIDs;
         gripperID;
