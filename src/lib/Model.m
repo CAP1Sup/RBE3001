@@ -24,7 +24,7 @@ classdef Model
 
         % Takes a 1x4 array of joint values and the plot to update
         % Plots a stick model of the arm showing all frames, joints, and links
-        function plot_arm(self, joint_pos, robotPlot, xQPlot, yQPlot, zQPlot)
+        function fk = plot_arm(self, joint_pos, robotPlot, xQPlot, yQPlot, zQPlot)
             fk = self.robot.joints2fk(joint_pos);
             xs = squeeze(fk(1,4,:));
             ys = squeeze(fk(2,4,:));
