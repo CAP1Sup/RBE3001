@@ -258,6 +258,7 @@ classdef Robot < OM_X_arm
         % alpha in degrees
         % Ouputs a 1x4 vector of joint angles
         function jointParam = task2ik(~, pos_arr)
+            % Define constants and value naming
             x = pos_arr(1);
             y = pos_arr(2);
             z = pos_arr(3);
@@ -267,14 +268,13 @@ classdef Robot < OM_X_arm
             L2 = 124;
             L3 = 133.4;
 
-            % side lengths of the triangle
-            %a = sqrt(((sqrt(x^2 + y^2))-L3*cos(alpha))^2 + (z+L3*sin(alpha)-96.326)^2);
+            % Compute side lengths of the triangle
             planar_x = sqrt(x ^ 2 + y ^ 2) - L3 * cos(alpha);
             planar_y = z + L3 * sin(alpha) - 96.326;
             a = sqrt(planar_x ^ 2 + planar_y ^ 2);
             L1 = sqrt(L1x ^ 2 + L1y ^ 2); % L1
 
-            % angles of the triangle
+            % Calculate the angles of the triangle
             if abs((L2 ^ 2 + L1 ^ 2 - a ^ 2) / (2 * L2 * L1)) > 1
                 error("Cannot be reached, elbow joint angle does not exist");
             else
@@ -287,29 +287,23 @@ classdef Robot < OM_X_arm
                 B = acos((a ^ 2 + L1 ^ 2 - L2 ^ 2) / (2 * a * L1));
             end
 
+            % Calculate the angle of the J1->J3 vector and sholder offset
             beta = atan2(planar_y, planar_x);
             shoulder_offset = atan2(L1x, L1y);
 
-            beta = atan2((z + L3 * sin(alpha) - 96.326), (sqrt(x ^ 2 + y ^ 2) - L3 * cos(alpha)));
-            theta = atan2(24, 128);
-
-            beta = atan2((z + sin(alpha) - 96.326), (sqrt(x ^ 2 + y ^ 2) - cos(alpha)));
-            theta = atan2(24, 128);
-
+            % Compute the location of the left-right rotation
             if x == 0 && y == 0
                 q1 = 0;
             else
                 q1 = atan2(y, x);
             end
 
-            disp([a, b, c, A, B, beta, theta, h, g]);
-
-            disp([a, L2, L1, A, B, beta, shoulder_offset, planar_x, planar_y]);
-
+            % Calculate the joint angles
             q2 = pi / 2 - B - beta - shoulder_offset;
             q3 = pi / 2 - A + shoulder_offset;
             q4 = alpha - q3 - q2;
 
+            % Quick sanity check on the wrist angle
             if abs(q4) > pi / 2
                 error("Cannot be reached, wrist joint angle does not exist");
             end
@@ -317,20 +311,50 @@ classdef Robot < OM_X_arm
             jointParam = rad2deg([q1, q2, q3, q4]);
         end % task2ik
 
-        % Takes 4x4 matrix of trajectory coefficients, with joints as rows
-        % and coefficients as columns, and the desired movement duration in
-        % seconds
+        % Takes 4x4 matrix of trajectory coefficients, with joints or task
+        % space dimensions [x,y,z,alpha] as rows and coefficients as
+        % columns, and the desired movement duration in seconds. Specify
+        % "true" as the third argument if the trajectories are in task
+        % space instead of joint space.
         % Returns joint angle data entries of format: [time, q1, q2, q3, q4]
-        function joint_pos_data = run_trajectory(self, traj_coef, move_dur)
+        function joint_pos_data = run_trajectory(varargin)
+            % Validate argument count
+            if length(varargin) ~= 3 && length(varargin) ~= 4
+                error("Invalid number of arguments in run_trajectory");
+            end
+
+            % Set variables for easier readability
+            self = varargin{1};
+            traj_coef = varargin{2};
+            move_dur = varargin{3};
+
             tic;
 
-            while toc <= + move_dur
+            while toc <= move_dur
                 time = toc;
-                q1 = polyval(flip(traj_coef(1, :), 2), time);
-                q2 = polyval(flip(traj_coef(2, :), 2), time);
-                q3 = polyval(flip(traj_coef(3, :), 2), time);
-                q4 = polyval(flip(traj_coef(4, :), 2), time);
-                self.set_joint_vars([q1, q2, q3, q4], 0);
+
+                % Decide if we're in task space
+                if length(varargin) == 4
+                    in_task_space = varargin{4};
+                else
+                    in_task_space = false;
+                end
+
+                if (in_task_space)
+                    x = polyval(flip(traj_coef(1, :), 2), time);
+                    y = polyval(flip(traj_coef(2, :), 2), time);
+                    z = polyval(flip(traj_coef(3, :), 2), time);
+                    alpha = polyval(flip(traj_coef(4, :), 2), time);
+                    joint_vals = self.task2ik([x, y, z, alpha]);
+                else % in joint space
+                    q1 = polyval(flip(traj_coef(1, :), 2), time);
+                    q2 = polyval(flip(traj_coef(2, :), 2), time);
+                    q3 = polyval(flip(traj_coef(3, :), 2), time);
+                    q4 = polyval(flip(traj_coef(4, :), 2), time);
+                    joint_vals = [q1, q2, q3, q4];
+                end
+
+                self.set_joint_vars(joint_vals, 0);
                 pause(0.01); % pause 0.01s so joints can catch up
                 joint_pos = self.read_joint_vars(true, false);
 
