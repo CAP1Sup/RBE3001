@@ -368,7 +368,7 @@ classdef Robot < OM_X_arm
 
         end % run_trajectory
 
-        % Takes a 4x1 vector of current joint angles and instantaneous
+        % Takes a 1x4 vector of current joint angles and a 4x1 vector of instantaneous
         % joing velocites
         % Returns a 6x1 vector of task-space linear & angular velocities
         function TSvel = vel2fdk(curr_joint_ang, inst_joint_vel)
