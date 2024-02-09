@@ -1,7 +1,7 @@
 clear
 syms q1(t) q2(t) q3(t) q4(t);
 
-% Joints are in radians
+% Joints are in radians!
 joints = [q1,q2,q3,q4];
 fks = joints2fk(joints);
 last_fk = simplify(fks(:,:,4));
@@ -17,20 +17,21 @@ d_last_fk = simplify(diff(last_fk,t));
 approx_d_last_fk = vpa(d_last_fk, 5)
 approx_d_pos = vpa(d_last_fk(1:3,4), 5)
 
-% Extract the derivative
+% Extract the derivatives
 A = subs(approx_d_pos, {diff(q1(t),t),diff(q2(t),t),diff(q3(t),t),diff(q4(t),t)}, {1,0,0,0});
 B = subs(approx_d_pos, {diff(q1(t),t),diff(q2(t),t),diff(q3(t),t),diff(q4(t),t)}, {0,1,0,0});
 C = subs(approx_d_pos, {diff(q1(t),t),diff(q2(t),t),diff(q3(t),t),diff(q4(t),t)}, {0,0,1,0});
 D = subs(approx_d_pos, {diff(q1(t),t),diff(q2(t),t),diff(q3(t),t),diff(q4(t),t)}, {0,0,0,1});
 
-jacob = vpa(simplify([A B C D]),5)
+% Concatenate the 4 individual joint factors into a matrix
+pos_jacobian = vpa(simplify([A B C D]), 5)
 
 % Verify solution
 joint_d = [diff(q1(t),t); diff(q2(t),t); diff(q3(t),t); diff(q4(t),t)];
-solved_d_pos = vpa(simplify(jacob * joint_d),5)
+solved_d_pos = vpa(simplify(pos_jacobian * joint_d),5)
 
-original = vpa(subs(subs(approx_d_pos, {diff(q1(t),t),diff(q2(t),t),diff(q3(t),t),diff(q4(t),t)}, {1,1,1,1}), {q1(t),q2(t),q3(t),q4(t)}, {1,2,3,4}),5)
-solved = vpa(subs(subs(solved_d_pos, {diff(q1(t),t),diff(q2(t),t),diff(q3(t),t),diff(q4(t),t)}, {1,1,1,1}), {q1(t),q2(t),q3(t),q4(t)}, {1,2,3,4}),5)
+original_test_output = vpa(subs(subs(approx_d_pos, {diff(q1(t),t),diff(q2(t),t),diff(q3(t),t),diff(q4(t),t)}, {1,1,1,1}), {q1(t),q2(t),q3(t),q4(t)}, {1,2,3,4}),5)
+solved_test_output = vpa(subs(subs(solved_d_pos, {diff(q1(t),t),diff(q2(t),t),diff(q3(t),t),diff(q4(t),t)}, {1,1,1,1}), {q1(t),q2(t),q3(t),q4(t)}, {1,2,3,4}),5)
 
 %% Functions stolen from Robot
 % Gets a DH table using the current joint positions
