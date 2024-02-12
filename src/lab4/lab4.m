@@ -29,8 +29,7 @@ for trial = currTrial:maxTrials
 
     new_joint_vel = robot.read_joint_vars(false , true);
     new_joint_vel = [new_joint_vel(2,:)];
-    
-    
+
     if exist("prev_joint_value", "var")
         new_joint_value(:,1) = new_joint_value(:,1) + max(prev_joint_value(:,1)) + 0.1;
     end

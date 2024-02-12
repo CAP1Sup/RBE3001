@@ -358,6 +358,8 @@ classdef Robot < OM_X_arm
                 pause(0.01); % pause 0.01s so joints can catch up
                 joint_pos = self.read_joint_vars(true, false);
 
+                < << < << < HEAD
+
                 if exist("joint_pos_data", "var")
                     joint_pos_data = [joint_pos_data; [time, joint_pos(1, :)]];
                 else
@@ -367,6 +369,70 @@ classdef Robot < OM_X_arm
             end % toc <= move_dur
 
         end % run_trajectory
+
+        = == = == =
+        % Takes 4x4 matrix of trajectory coefficients, with joints or task
+        % space dimensions [x,y,z,alpha] as rows and coefficients as
+        % columns, and the desired movement duration in seconds. Specify
+        % "true" as the third argument if the trajectories are in task
+        % space instead of joint space.
+        % Returns joint variable data entries of format:
+        % [time, q1, q2, q3, q4;
+        %  0,    v1, v2, v3, v4]
+        function joint_var_data = run_trajectory_pos_vel(varargin)
+            % Validate argument count
+            if length(varargin) ~= 3 && length(varargin) ~= 4
+                error("Invalid number of arguments in run_trajectory");
+            end
+
+            % Set variables for easier readability
+            self = varargin{1};
+            traj_coef = varargin{2};
+            move_dur = varargin{3};
+
+            tic;
+
+            while toc <= move_dur
+                time = toc;
+
+                % Decide if we're in task space
+                if length(varargin) == 4
+                    in_task_space = varargin{4};
+                else
+                    in_task_space = false;
+                end
+
+                if (in_task_space)
+                    x = polyval(flip(traj_coef(1, :), 2), time);
+                    y = polyval(flip(traj_coef(2, :), 2), time);
+                    z = polyval(flip(traj_coef(3, :), 2), time);
+                    alpha = polyval(flip(traj_coef(4, :), 2), time);
+                    joint_vals = self.task2ik([x, y, z, alpha]);
+                else % in joint space
+                    q1 = polyval(flip(traj_coef(1, :), 2), time);
+                    q2 = polyval(flip(traj_coef(2, :), 2), time);
+                    q3 = polyval(flip(traj_coef(3, :), 2), time);
+                    q4 = polyval(flip(traj_coef(4, :), 2), time);
+                    joint_vals = [q1, q2, q3, q4];
+                end
+
+                self.set_joint_vars(joint_vals, 0);
+                pause(0.01); % pause 0.01s so joints can catch up
+                joint_pos = self.read_joint_vars(true, true);
+
+                if exist("joint_pos_data", "var")
+                    joint_var_data = [joint_var_data; [time, joint_pos(1, :);
+                                                       0, joint_pos(2, :)]];
+                else
+                    joint_var_data = [time, joint_pos(1, :);
+                                      0, joint_pos(2, :)];
+                end % exists "joint_pos_data"
+
+            end % toc <= move_dur
+
+        end % run_trajectory_pos_vel
+
+        > >> > >> > 73fd4fd (Added new run_trajectoy_pos_vel fucntion to keep backwards compatibility)
 
         % Takes in in a 1x4 matrix of current joint angles (in deg)
         % Produces corresponding numeric 6x4 Jacobian matrix
