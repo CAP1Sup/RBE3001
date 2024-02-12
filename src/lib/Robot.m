@@ -404,6 +404,31 @@ classdef Robot < OM_X_arm
             TSvel = jacobian * transpose(inst_joint_vel);
         end % end vel2fdk
 
+        < << < << < HEAD
+        = == = == =
+        % Takes a 1x4 vector of target joint position (x, y, z, alpha)
+        % Returns a 1x4 vector of target joint angles
+        function IKJointReadings = Newton_Raphson_IK(self, target_joint_pos)
+            % Gets the 1x4 array of the joint positions
+            % Used to "seed" the integration
+            curr_joint_var = self.read_joint_vars(true, false);
+            curr_joint_pos = curr_joint_var(1, :);
+
+            while norm(target_joint_pos - current_joint_pos) > 1e-3
+                jacobian = self.get_jacobian(curr_joint_pos); % gets the Jacobian
+
+                fks = joints2fk(curr_joint_pos); % performs a fk with current joint values
+                curr_joint_pos = transpose(fks(1:3, 4, 4)); % 1x3 array of position
+
+                deltaQ = pinv(jacobian(3, :)) * (target_joint_pos - curr_joint_pos);
+
+                curr_joint_pos = curr_joint_pos + deltaQ;
+            end
+
+        end % Newton_Raphson_IK
+
+        > >> > >> > f82aba4 (Wrote Newton Raphson function w / o validation)
+        > >> > >> > baf7f3b (Wrote Newton Raphson function w / o validation)
     end % end methods
 
 end % end class
