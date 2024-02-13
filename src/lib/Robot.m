@@ -387,12 +387,12 @@ classdef Robot < OM_X_arm
                         1,  0,          0,          0];
         end % get_jacobian
         
-        % Takes a 1x4 vector of current joint angles and a 4x1 vector of instantaneous
-        % joing velocites
+        % Takes a 1x4 vector of current joint angles and a 1x4 vector of 
+        % instantaneous joint velocites
         % Returns a 6x1 vector of task-space linear & angular velocities
-        function TSvel = vel2fdk(curr_joint_ang, inst_joint_vel)
-            Jacobian = get_jacobian(curr_joint_ang);
-            TSvel = Jacobian * inst_joint_vel;
+        function TSvel = vel2fdk(self, curr_joint_ang, inst_joint_vel)
+            jacobian = self.get_jacobian(curr_joint_ang);
+            TSvel = jacobian * transpose(inst_joint_vel);
         end % end vel2fdk
         
     end % end methods
