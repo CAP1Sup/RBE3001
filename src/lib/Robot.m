@@ -400,18 +400,25 @@ classdef Robot < OM_X_arm
         % instantaneous joint velocites
         % Returns a 6x1 vector of task-space linear & angular velocities
         function TSvel = vel2fdk(self, curr_joint_ang, inst_joint_vel)
+            % Calculate the Jacobian
             jacobian = self.get_jacobian(curr_joint_ang);
+
+            % Return the task space velocities
             TSvel = jacobian * transpose(inst_joint_vel);
         end % end vel2fdk
 
         % Check if the arm is close to entering a singularity
-        function prevent_singularity(self, jacobian)
+        % Returns the calculated determinant for debugging
+        function jDet = prevent_singularity(self, jacobian)
 
             % Define a threshold for how close to zero the determinant can get before it's considered too close to a singularity
             threshold = 0.01; % This value might need to be adjusted
 
+            % Calculate the determinant of 3x3 postage stamp
+            jDet = det(jacobian(1:3, 1:3));
+
             % Check if the determinant of the upper left 3x3 is too close to zero
-            if abs(det(jacobian(1:3, 1:3))) < threshold
+            if abs(jDet) < threshold
                 % Too close to a singularity, stop the robot's motion by sending zero velocities and displaying an error message
                 self.writeVelocities([0, 0, 0, 0]); % Stop all joint movements
                 error('Emergency stop: Approaching singularity!');
