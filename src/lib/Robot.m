@@ -404,7 +404,7 @@ classdef Robot < OM_X_arm
                 self.set_joint_vars(joint_vals, 0);
                 pause(0.01); % pause 0.01s so joints can catch up
                 joint_pos = self.read_joint_vars(true,true);
-                if exist("joint_pos_data", "var")
+                if exist("joint_var_data", "var")
                     joint_var_data = [joint_var_data; [time, joint_pos(1,:);
                                                         0, joint_pos(2,:)]];
                 else
