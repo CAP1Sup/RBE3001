@@ -26,10 +26,8 @@ time = [0];
 for trial = currTrial:maxTrials
     coeffs = calc_quintic_t_coeff(robot,location(trial+1,:), travelTime);
     new_joint_value = robot.run_trajectory_pos_vel(coeffs, travelTime, true);
-
-    new_joint_vel = robot.read_joint_vars(false , true);
-    new_joint_vel = [new_joint_vel(2,:)];
-
+    
+    
     if exist("prev_joint_value", "var")
         new_joint_value(:,1) = new_joint_value(:,1) + max(prev_joint_value(:,1)) + 0.1;
     end
@@ -50,15 +48,16 @@ end % for
             time = [time; max(joint_pos(:,1))];
             end
     end
+    
 time = time(3:end,1);               % gets rid of first row being 0
 joint_vel = joint_vel(3:end,2:end); % gets rid of first row being 0
 joint_pos = joint_pos(3:end,2:end); % gets rid of first row being 0
 
 x = joint_pos(14,1:end);
-y = transpose(joint_vel(14,1:end));
+y = joint_vel(14,1:end);
 disp(x);
 disp(y);
-TSvel = vel2fdk(x,y);
+TSvel = robot.vel2fdk(x,y);
 
 
 % Conveience function to generate the task space quintic trajectory coefficients
