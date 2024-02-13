@@ -394,6 +394,19 @@ classdef Robot < OM_X_arm
             jacobian = self.get_jacobian(curr_joint_ang);
             TSvel = jacobian * transpose(inst_joint_vel);
         end % end vel2fdk
-        
+
+        % Check if the arm is close to entering a singularity
+        function prevent_singularity(self, jacobian)
+
+            % Define a threshold for how close to zero the determinant can get before it's considered too close to a singularity
+            threshold = 0.01; % This value might need to be adjusted
+
+            % Check if the determinant of the upper left 3x3 is too close to zero
+            if abs(det(jacobian(1:3, 1:3))) < threshold
+                % Too close to a singularity, stop the robot's motion by sending zero velocities and displaying an error message
+                self.writeVelocities([0, 0, 0, 0]); % Stop all joint movements
+                error('Emergency stop: Approaching singularity!');
+            end
+        end % end prevent_singularity
     end % end methods
 end % end class 
