@@ -404,68 +404,21 @@ classdef Robot < OM_X_arm
             TSvel = jacobian * transpose(inst_joint_vel);
         end % end vel2fdk
 
-        % Takes a 1x4 vector of target joint position [x, y, z, alpha]
-        % Returns a 1x4 vector of target joint angles over time
-        % Last set of angles will be the solution
-        function joint_positions = numerical_task2ik(self, target_task_pos)
-            % Set the max number of iterations (prevents hangups)
-            max_iterations = 3000;
-            iterations = 0;
+        % Check if the arm is close to entering a singularity
+        function prevent_singularity(self, jacobian)
 
-            % Read the 1x4 array of the current joint positions
-            % Used to "seed" the solver
-            curr_joint_var = self.read_joint_vars(true, false);
-            curr_joint_pos = curr_joint_var(1, :);
-            joint_positions = curr_joint_pos;
+            % Define a threshold for how close to zero the determinant can get before it's considered too close to a singularity
+            threshold = 0.01; % This value might need to be adjusted
 
-            function final_joint_pos = Newton_Raphson_IK(self, target_task_pos)
-                % Reads the 1x4 array of the current joint positions
-                % Used to "seed" the integration
-                curr_joint_var = self.read_joint_vars(true, false);
-                curr_joint_pos = curr_joint_var(1, :);
+            % Check if the determinant of the upper left 3x3 is too close to zero
+            if abs(det(jacobian(1:3, 1:3))) < threshold
+                % Too close to a singularity, stop the robot's motion by sending zero velocities and displaying an error message
+                self.writeVelocities([0, 0, 0, 0]); % Stop all joint movements
+                error('Emergency stop: Approaching singularity!');
+            end
 
-                < << < << < HEAD
-                % Performs a fk with current joint values and gets the 1x3
-                % array of position
-                fks = joints2fk(curr_joint_pos);
-                curr_task_pos = transpose(fks(1:3, 4, 4));
-                = == = == =
-                % Performs a fk with current joint values and gets the 4x1
-                % array of position [x; y; z; alpha]
-                fks = self.joints2fk(curr_joint_pos);
-                alpha = curr_joint_pos(2) + curr_joint_pos(3) + curr_joint_pos(4);
-                curr_task_pos = fks(1:3, 4, 4);
-                curr_task_pos = [curr_task_pos; alpha];
-                > >> > >> > e61fc55 (Newton - Raphson - IK - Algorithm fixed with a correct dimension)
+        end % end prevent_singularity
 
-                % Algorithm runs until the desired error tolerance is reached
-                < << < << < HEAD
+    end % end methods
 
-                while norm(target_task_pos - curr_task_pos) > 1e-2
-                    % Gets the Jacobian
-                    jacobian = self.get_jacobian(curr_joint_pos);
-                    = == = == =
-
-                    while norm(target_task_pos - curr_task_pos) > 1e-1
-                        % Get the Jacobian
-                        jacobian = self.get_jacobian(curr_joint_pos);
-                        > >> > >> > cd6e1e4 (Added numerical IK testing)
-
-                        % Save the new joint position
-                        joint_positions = [joint_positions; curr_joint_pos];
-
-                        % Increment the iterations and check if there's been too
-                        % many
-                        iterations = iterations + 1;
-
-                        if (iterations >= max_iterations)
-                            error("Unable to solve inverse kinematics with numerical method")
-                        end
-
-                    end % Position deviation difference
-
-                end % Newton_Raphson_IK
-
-            end % end methods
-
-        end % end class
+end % end class
