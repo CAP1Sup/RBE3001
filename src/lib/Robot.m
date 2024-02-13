@@ -420,7 +420,7 @@ classdef Robot < OM_X_arm
               
                 % Calculates the change in joint positions
                 % Gets the first 3x4 Jacobian (only x, y, z)
-                deltaQ = pinv(jacobian(3,:))*(target_task_pos - curr_task_pos);
+                deltaQ = pinv(jacobian(3,1:3))*(target_task_pos - curr_task_pos);
                 
                 % Updates the joint positions
                 curr_joint_pos = curr_joint_pos + deltaQ;
