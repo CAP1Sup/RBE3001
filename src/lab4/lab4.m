@@ -75,9 +75,8 @@ joint_pos = joint_pos(3:end,2:end); % gets rid of first row being 0
 end% end  if
 
 
-
+%% 3D Live Plotting
 if(plot3)
-    %% Create the plot, perform the movement
     figure(1)
     title("3D Arm Live Model at Position ")
     xlabel("X (mm)");
@@ -85,23 +84,24 @@ if(plot3)
     zlabel("Z (mm)");
     grid on
     set(gca,'fontsize',16)
-    hold on
     [robotPlot, xQPlot, yQPlot, zQPlot] = model.new_arm_plots();
-    %velQPlot = quiver3(0,0,0,0,0,0)
+    hold on
+    velQPlot = quiver3(0,0,0,0,0,0);
     hold off
 
     i = 1;
     tic;
 
-    while(i <= length(time))
-   
-      
-        model.plot_arm(joint_pos(i,:), robotPlot, xQPlot, yQPlot, zQPlot);
-     
+    while(i <= length(time))   
+        fks = model.plot_arm(joint_pos(i,:), robotPlot, xQPlot, yQPlot, zQPlot);
+        velScaling = 0.05;
+        set(velQPlot, "XData", fks(1,4,4), "YData", fks(2,4,4), "ZData", fks(3,4,4), "UData", TsVel(i,1)*velScaling, "VData", TsVel(i,2)*velScaling, "WData", TsVel(i,3)*velScaling);
+        drawnow
+
         if (i == length(time))
             hold on
             pause(0.1);
-            quiver3(EF(i,1),EF(i,2),EF(i,3),TsVel(i,1),TsVel(i,2),TsVel(i,3));
+            %quiver3(EF(i,1),EF(i,2),EF(i,3),TsVel(i,1),TsVel(i,2),TsVel(i,3));
             hold off
         else
             pause(time(i+1,1)-time(i,1));
@@ -109,14 +109,10 @@ if(plot3)
         i = i + 1;
 
     end % end while
-
-    
-
-
 end % end if plot
 
 
-
+%% 2D Plotting
 figure(2)
     plot(time(2:end), TsVel(2:end, 1));
     hold on
@@ -151,12 +147,6 @@ figure(4)
     ylabel('Vel (mm/s)')
     set(gca, 'fontsize', 18);
     axis([0 max(time(:,1)) min(mag) max(mag)])
-
-
-
-
-
-
 
 % Conveience function to generate the task space quintic trajectory coefficients
 function coeff = calc_quintic_t_coeff(robot, desired_pose, move_time)
