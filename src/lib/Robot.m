@@ -455,7 +455,7 @@ classdef Robot < OM_X_arm
         % Returns a 6x1 vector of task-space linear & angular velocities
         function TSvel = vel2fdk(self, curr_joint_ang, inst_joint_vel)
             jacobian = self.get_jacobian(curr_joint_ang);
-            TSvel = jacobian * transpose(inst_joint_vel);
+            TSvel = jacobian * transpose(deg2rad(inst_joint_vel));
         end % end vel2fdk
         
     end % end methods
