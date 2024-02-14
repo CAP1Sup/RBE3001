@@ -254,6 +254,13 @@ classdef Robot < OM_X_arm
             fk = self.dh2fk(self.getDHTable(joint_pos));
         end % joints2fk
 
+        % Takes a 1x4 vector of joint angles
+        % outputs [x,y,z] coordinates of the end effector
+        function efcoord = efCoord(self, joint_pos)
+            fks = self.joints2fk(joint_pos);
+            efcoord = transpose(fks(1:3, 4, 4));
+        end
+
         % Takes a 1x4 vector of x,y,z position in mm and orientation angle,
         % alpha in degrees
         % Ouputs a 1x4 vector of joint angles

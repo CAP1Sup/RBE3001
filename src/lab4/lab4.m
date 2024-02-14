@@ -1,6 +1,7 @@
-clear;
+clear all;
 %% SETUP
-robot = Robot();
+
+model = Model();
 
 location = [200,  0,   100,  0;
             100,  200, 350, -90;
@@ -11,22 +12,30 @@ travelTime = 3; % seconds
 maxTrials = 3; %% SET THIS NUMBER FOR EACH INDIVIDUAL TRIAL
 currTrial = 1; % initalize trial start
 
-%% CODE
+plot3 = true; % IF FALSE YOU ARE DATA COLLECTING 
+new_data = true;
 
-robot.set_joint_vars([0, 0, 0, 0], travelTime*1000);
-pause(travelTime)
-ik_pose = robot.task2ik(location(currTrial,:));
-robot.set_joint_vars(ik_pose,travelTime*1000);
-pause(travelTime);
-currPos = robot.read_joint_vars(true , true);
+if(new_data)
 joint_vel = [0,0,0,0,0];
 joint_pos = [0,0,0,0,0];
 joint_value = [0,0,0,0,0; 0,0,0,0,0];
+TsVel = [0,0,0,0,0,0];
 time = [0];
+EF=[0,0,0];
+end
+
+%% CODE
+
+model.robot.set_joint_vars([0, 0, 0, 0], travelTime*1000);
+pause(travelTime)
+ik_pose = model.robot.task2ik(location(currTrial,:));
+model.robot.set_joint_vars(ik_pose,travelTime*1000);
+pause(travelTime);
+currPos = model.robot.read_joint_vars(true , true);
+
 for trial = currTrial:maxTrials
-    coeffs = calc_quintic_t_coeff(robot,location(trial+1,:), travelTime);
-    new_joint_value = robot.run_trajectory_pos_vel(coeffs, travelTime, true);
-    
+    coeffs = calc_quintic_t_coeff(model.robot,location(trial+1,:), travelTime);
+    new_joint_value = model.robot.run_trajectory_pos_vel(coeffs, travelTime, true);
     
     if exist("prev_joint_value", "var")
         new_joint_value(:,1) = new_joint_value(:,1) + max(prev_joint_value(:,1)) + 0.1;
@@ -37,9 +46,12 @@ for trial = currTrial:maxTrials
         joint_value = new_joint_value;
     end
     prev_joint_value = new_joint_value;
+  
 
 end % for
 
+
+if(new_data)
     for i = 1:length(joint_value)
             if mod(i,2) == 0
             joint_vel = [joint_vel; joint_value(i,:)];
@@ -47,17 +59,103 @@ end % for
             joint_pos = [joint_pos; joint_value(i,:)];
             time = [time; max(joint_pos(:,1))];
             end
-    end
+    end % end for
     
 time = time(3:end,1);               % gets rid of first row being 0
 joint_vel = joint_vel(3:end,2:end); % gets rid of first row being 0
 joint_pos = joint_pos(3:end,2:end); % gets rid of first row being 0
 
-x = joint_pos(14,1:end);
-y = joint_vel(14,1:end);
-disp(x);
-disp(y);
-TSvel = robot.vel2fdk(x,y);
+
+    for i = 1:length(time)
+        TsVel = [TsVel;transpose(model.robot.vel2fdk(joint_pos(i,:),joint_vel(i,:)))];
+        EF = [EF;model.robot.efCoord(joint_pos(i,:))];
+    end % end for
+    TsVel = TsVel(2:end,:);
+    EF = EF(2:end,:);
+end% end  if
+
+
+
+if(plot3)
+    %% Create the plot, perform the movement
+    figure(1)
+    title("3D Arm Live Model at Position ")
+    xlabel("X (mm)");
+    ylabel("Y (mm)");
+    zlabel("Z (mm)");
+    grid on
+    set(gca,'fontsize',16)
+    hold on
+    [robotPlot, xQPlot, yQPlot, zQPlot] = model.new_arm_plots();
+    %velQPlot = quiver3(0,0,0,0,0,0)
+    hold off
+
+    i = 1;
+    tic;
+
+    while(i <= length(time))
+   
+      
+        model.plot_arm(joint_pos(i,:), robotPlot, xQPlot, yQPlot, zQPlot);
+     
+        if (i == length(time))
+            hold on
+            pause(0.1);
+            quiver3(EF(i,1),EF(i,2),EF(i,3),TsVel(i,1),TsVel(i,2),TsVel(i,3));
+            hold off
+        else
+            pause(time(i+1,1)-time(i,1));
+        end
+        i = i + 1;
+
+    end % end while
+
+    
+
+
+end % end if plot
+
+
+
+figure(2)
+    plot(time(2:end), TsVel(2:end, 1));
+    hold on
+    plot(time(2:end), TsVel(2:end, 2));
+    plot(time(2:end), TsVel(2:end, 3));
+    hold off
+    legend('EF X Velocity', 'EF Y Velocity', 'EF Z Velocity', 'Location', 'northwest')
+    title('X,Y,Z Velocities of EF')
+    xlabel('Time (s)')
+    ylabel('Vel (mm/s)')
+    set(gca, 'fontsize', 18);
+    
+
+figure(3)
+    plot(time(2:end), TsVel(2:end, 4));
+    hold on
+    plot(time(2:end), TsVel(2:end, 5));
+    plot(time(2:end), TsVel(2:end, 6));
+    hold off
+    legend('EF X Angular Velocity', 'EF Y Angular Velocity', 'EF Z Angular Velocity', 'Location', 'northwest')
+    title('X,Y,Z Angular Velocities of EF')
+    xlabel('Time (s)')
+    ylabel('Vel (deg/s)')
+    set(gca, 'fontsize', 18);
+
+mag = vecnorm(TsVel(2:end,1:3), 2, 2);
+figure(4)
+    plot(time(2:end), mag);
+    legend('Magntude of Linear Velocity', 'Location', 'northwest')
+    title('Linear Magntitude Velocity of EF')
+    xlabel('Time (s)')
+    ylabel('Vel (mm/s)')
+    set(gca, 'fontsize', 18);
+    axis([0 max(time(:,1)) min(mag) max(mag)])
+
+
+
+
+
 
 
 % Conveience function to generate the task space quintic trajectory coefficients
