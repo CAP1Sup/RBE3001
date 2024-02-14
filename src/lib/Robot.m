@@ -445,6 +445,7 @@ classdef Robot < OM_X_arm
 
                 end % toc <= move_dur
 
+                < << < << < HEAD
             end % run_trajectory_pos_vel
 
             > >> > >> > 73fd4fd (Added new run_trajectoy_pos_vel fucntion to keep backwards compatibility)
@@ -510,3 +511,22 @@ classdef Robot < OM_X_arm
         end % end methods
 
     end % end class
+
+    = == = == =
+    % Orientation Jacobian
+    0, -sin(q(1)), -sin(q(1)), -sin(q(1));
+    0, cos(q(1)), cos(q(1)), cos(q(1));
+    1, 0, 0, 0];
+end % get_jacobian
+
+% Takes a 1x4 vector of current joint angles and a 1x4 vector of
+% instantaneous joint velocites
+% Returns a 6x1 vector of task-space linear & angular velocities
+function TSvel = vel2fdk(self, curr_joint_ang, inst_joint_vel)
+    jacobian = self.get_jacobian(curr_joint_ang);
+    TSvel = jacobian * transpose(deg2rad(inst_joint_vel));
+end % end vel2fdk
+
+end % end methods
+end % end class
+> >> > >> > a6dd6de (Fixed unit issues with vel2fdk)

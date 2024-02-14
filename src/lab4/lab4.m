@@ -50,7 +50,7 @@ for trial = currTrial:maxTrials
 
 end % for
 
-
+%% Perform calculations on the data
 if(new_data)
     for i = 1:length(joint_value)
             if mod(i,2) == 0
@@ -94,15 +94,11 @@ if(plot3)
 
     while(i <= length(time))   
         fks = model.plot_arm(joint_pos(i,:), robotPlot, xQPlot, yQPlot, zQPlot);
-        velScaling = 0.05;
-        set(velQPlot, "XData", fks(1,4,4), "YData", fks(2,4,4), "ZData", fks(3,4,4), "UData", TsVel(i,1)*velScaling, "VData", TsVel(i,2)*velScaling, "WData", TsVel(i,3)*velScaling);
+        set(velQPlot, "XData", fks(1,4,4), "YData", fks(2,4,4), "ZData", fks(3,4,4), "UData", TsVel(i,1), "VData", TsVel(i,2), "WData", TsVel(i,3));
         drawnow
 
         if (i == length(time))
-            hold on
             pause(0.1);
-            %quiver3(EF(i,1),EF(i,2),EF(i,3),TsVel(i,1),TsVel(i,2),TsVel(i,3));
-            hold off
         else
             pause(time(i+1,1)-time(i,1));
         end
@@ -122,29 +118,29 @@ figure(2)
     legend('EF X Velocity', 'EF Y Velocity', 'EF Z Velocity', 'Location', 'northwest')
     title('X,Y,Z Velocities of EF')
     xlabel('Time (s)')
-    ylabel('Vel (mm/s)')
+    ylabel('Velocity (mm/s)')
     set(gca, 'fontsize', 18);
     
 
 figure(3)
-    plot(time(2:end), TsVel(2:end, 4));
+    plot(time(2:end), rad2deg(TsVel(2:end, 4)));
     hold on
-    plot(time(2:end), TsVel(2:end, 5));
-    plot(time(2:end), TsVel(2:end, 6));
+    plot(time(2:end), rad2deg(TsVel(2:end, 5)));
+    plot(time(2:end), rad2deg(TsVel(2:end, 6)));
     hold off
     legend('EF X Angular Velocity', 'EF Y Angular Velocity', 'EF Z Angular Velocity', 'Location', 'northwest')
     title('X,Y,Z Angular Velocities of EF')
     xlabel('Time (s)')
-    ylabel('Vel (deg/s)')
+    ylabel('Velocity (deg/s)')
     set(gca, 'fontsize', 18);
 
 mag = vecnorm(TsVel(2:end,1:3), 2, 2);
 figure(4)
     plot(time(2:end), mag);
-    legend('Magntude of Linear Velocity', 'Location', 'northwest')
-    title('Linear Magntitude Velocity of EF')
+    legend('Magnitude of Linear Velocity', 'Location', 'northwest')
+    title('EF Linear Velocity Magnitude')
     xlabel('Time (s)')
-    ylabel('Vel (mm/s)')
+    ylabel('Velocity (mm/s)')
     set(gca, 'fontsize', 18);
     axis([0 max(time(:,1)) min(mag) max(mag)])
 
