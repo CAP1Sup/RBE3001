@@ -413,7 +413,7 @@ classdef Robot < OM_X_arm
             curr_task_pos = [transpose(fks(1:3,4,4)), alpha];
 
             % Algorithm runs until the desired error tolerance is reached
-            while norm(target_task_pos - curr_task_pos) > 1e-2
+            while norm(target_task_pos - curr_task_pos) > 1e-1
                 % Get the Jacobian
                 jacobian = self.get_jacobian(curr_joint_pos); 
 
