@@ -412,7 +412,7 @@ classdef Robot < OM_X_arm
         function jDet = prevent_singularity(self, jacobian)
 
             % Define a threshold for how close to zero the determinant can get before it's considered too close to a singularity
-            threshold = 0.01; % This value might need to be adjusted
+            threshold = 400000; % This value might need to be adjusted
 
             % Calculate the determinant of 3x3 postage stamp
             jDet = det(jacobian(1:3, 1:3));
