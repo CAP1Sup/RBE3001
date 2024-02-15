@@ -19,6 +19,10 @@ classdef Model
             yQPlot = quiver3(0, 0, 0, 0, 0, 0, Color="g", AutoScaleFactor=scaleFactor);
             zQPlot = quiver3(0, 0, 0, 0, 0, 0, Color="b", AutoScaleFactor=scaleFactor);
             axis([-300, 300, -300, 300, -50, 400]);
+            title("3D Plot of Robot with Reference Frames")
+            xlabel("X Pos (mm)")
+            ylabel("Y Pos (mm)")
+            zlabel("Z Pos (mm)")
             hold off
         end % new_arm_plot
 
