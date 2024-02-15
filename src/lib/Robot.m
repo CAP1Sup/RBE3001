@@ -399,6 +399,10 @@ classdef Robot < OM_X_arm
         % Returns a 1x4 vector of target joint angles over time
         % Last set of angles will be the solution
         function joint_positions = numerical_task2ik(self, target_task_pos)
+            % Set the max number of iterations (prevents hangups)
+            max_iterations = 3000;
+            iterations = 0;
+
             % Read the 1x4 array of the current joint positions
             % Used to "seed" the solver
             curr_joint_var = self.read_joint_vars(true, false);
@@ -436,6 +440,13 @@ classdef Robot < OM_X_arm
 
                 % Save the new joint position
                 joint_positions = [joint_positions; curr_joint_pos];
+
+                % Increment the iterations and check if there's been too
+                % many
+                iterations = iterations + 1;
+                if (iterations >= max_iterations)
+                    error("Unable to solve inverse kinematics with numerical method")
+                end
             end % Position deviation difference
         end % Newton_Raphson_IK
     end % end methods
