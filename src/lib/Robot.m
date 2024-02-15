@@ -247,6 +247,13 @@ classdef Robot < OM_X_arm
             fk = self.dh2fk(self.getDHTable(joint_pos));
         end % joints2fk
 
+        % Takes a 1x4 vector of joint angles
+        % outputs [x,y,z] coordinates of the end effector
+        function efcoord = efCoord(self,joint_pos)
+            fks = self.joints2fk(joint_pos);
+            efcoord = transpose(fks(1:3,4,4));
+        end
+
 
         % Takes a 1x4 vector of x,y,z position in mm and orientation angle,
         % alpha in degrees
@@ -304,10 +311,10 @@ classdef Robot < OM_X_arm
             jointParam = rad2deg([q1, q2, q3, q4]);
         end % task2ik
 
-        % Takes 4x4 matrix of trajectory coefficients, with joints or task 
-        % space dimensions [x,y,z,alpha] as rows and coefficients as 
+        % Takes 4x4 matrix of trajectory coefficients, with joints or task
+        % space dimensions [x,y,z,alpha] as rows and coefficients as
         % columns, and the desired movement duration in seconds. Specify
-        % "true" as the third argument if the trajectories are in task 
+        % "true" as the third argument if the trajectories are in task
         % space instead of joint space.
         % Returns joint angle data entries of format: [time, q1, q2, q3, q4]
         function joint_pos_data = run_trajectory(varargin)
@@ -357,6 +364,62 @@ classdef Robot < OM_X_arm
             end % toc <= move_dur
         end % run_trajectory
 
+        % Takes 4x4 matrix of trajectory coefficients, with joints or task
+        % space dimensions [x,y,z,alpha] as rows and coefficients as
+        % columns, and the desired movement duration in seconds. Specify
+        % "true" as the third argument if the trajectories are in task
+        % space instead of joint space.
+        % Returns joint variable data entries of format:
+        % [time, q1, q2, q3, q4;
+        %  0,    v1, v2, v3, v4]
+        function joint_var_data = run_trajectory_pos_vel(varargin)
+            % Validate argument count
+            if length(varargin) ~= 3 && length(varargin) ~= 4
+                error("Invalid number of arguments in run_trajectory");
+            end
+
+            % Set variables for easier readability
+            self = varargin{1};
+            traj_coef = varargin{2};
+            move_dur = varargin{3};
+
+            tic;
+            while toc <= move_dur
+                time = toc;
+
+                % Decide if we're in task space
+                if length(varargin) == 4
+                    in_task_space = varargin{4};
+                else
+                    in_task_space = false;
+                end
+
+                if (in_task_space)
+                    x = polyval(flip(traj_coef(1,:), 2), time);
+                    y = polyval(flip(traj_coef(2,:), 2), time);
+                    z = polyval(flip(traj_coef(3,:), 2), time);
+                    alpha = polyval(flip(traj_coef(4,:), 2), time);
+                    joint_vals = self.task2ik([x,y,z,alpha]);
+                else % in joint space
+                    q1 = polyval(flip(traj_coef(1,:), 2), time);
+                    q2 = polyval(flip(traj_coef(2,:), 2), time);
+                    q3 = polyval(flip(traj_coef(3,:), 2), time);
+                    q4 = polyval(flip(traj_coef(4,:), 2), time);
+                    joint_vals = [q1, q2, q3, q4];
+                end
+
+                self.set_joint_vars(joint_vals, 0);
+                pause(0.01); % pause 0.01s so joints can catch up
+                joint_pos = self.read_joint_vars(true,true);
+                if exist("joint_var_data", "var")
+                    joint_var_data = [joint_var_data; [time, joint_pos(1,:);
+                                                        0, joint_pos(2,:)]];
+                else
+                    joint_var_data = [time, joint_pos(1,:);
+                                        0, joint_pos(2,:)];
+                end % exists "joint_pos_data"
+            end % toc <= move_dur
+        end % run_trajectory_pos_vel
 
         % Takes in in a 1x4 matrix of current joint angles (in deg)
         % Produces corresponding numeric 6x4 Jacobian matrix
@@ -391,8 +454,9 @@ classdef Robot < OM_X_arm
         % instantaneous joint velocites
         % Returns a 6x1 vector of task-space linear & angular velocities
         function TSvel = vel2fdk(self, curr_joint_ang, inst_joint_vel)
+            % Calculate the Jacobian
             jacobian = self.get_jacobian(curr_joint_ang);
-            TSvel = jacobian * transpose(inst_joint_vel);
+            TSvel = jacobian * transpose(deg2rad(inst_joint_vel));
         end % end vel2fdk
 
         % Takes a 1x4 vector of target joint position [x, y, z, alpha]
@@ -448,6 +512,23 @@ classdef Robot < OM_X_arm
                     error("Unable to solve inverse kinematics with numerical method")
                 end
             end % Position deviation difference
-        end % Newton_Raphson_IK
+        end % numerical_task2ik
+
+        % Check if the arm is close to entering a singularity
+        % Returns the calculated determinant for debugging
+        function jDet = prevent_singularity(self, jacobian)
+            % Define a threshold for how close to zero the determinant can get before it's considered too close to a singularity
+            threshold = 400000; % This value might need to be adjusted
+
+            % Calculate the determinant of 3x3 postage stamp
+            jDet = det(jacobian(1:3, 1:3));
+
+            % Check if the determinant of the upper left 3x3 is too close to zero
+            if abs(jDet) < threshold
+                % Too close to a singularity, stop the robot's motion by sending zero velocities and displaying an error message
+                self.writeVelocities([0, 0, 0, 0]); % Stop all joint movements
+                error('Emergency stop: Approaching singularity!');
+            end
+        end % end prevent_singularity
     end % end methods
 end % end class 
