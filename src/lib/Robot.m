@@ -405,6 +405,7 @@ classdef Robot < OM_X_arm
         end % end vel2fdk
 
         < << < << < HEAD
+        < << < << < HEAD
         % Takes a 1x3 vector of target joint position (x, y, z)
         % Returns a 1x4 vector of target joint angles
         = == = == =
@@ -480,8 +481,53 @@ classdef Robot < OM_X_arm
             > >> > >> > e61fc55 (Newton - Raphson - IK - Algorithm fixed with a correct dimension)
             final_joint_pos = self.read_joint_vars(true, false);
             final_joint_pos = final_joint_pos(1, :);
-        end % Newton_Raphson_IK
+            = == = == =
+            % Takes a 1x4 vector of target joint position [x, y, z, alpha]
+            % Returns a 1x4 vector of target joint angles over time
+            % Last set of angles will be the solution
+            function joint_positions = numerical_task2ik(self, target_task_pos)
+                % Read the 1x4 array of the current joint positions
+                % Used to "seed" the solver
+                curr_joint_var = self.read_joint_vars(true, false);
+                curr_joint_pos = curr_joint_var(1, :);
+                joint_positions = curr_joint_pos;
 
-    end % end methods
+                % Performs a fk with current joint values and gets the 3x1
+                % array of position [x; y; z]
+                % Calculate the alpha and add that too
+                fks = self.joints2fk(curr_joint_pos);
+                alpha = curr_joint_pos(2) + curr_joint_pos(3) + curr_joint_pos(4);
+                curr_task_pos = [transpose(fks(1:3, 4, 4)), alpha];
 
-end % end class
+                % Algorithm runs until the desired error tolerance is reached
+                while norm(target_task_pos - curr_task_pos) > 1e-2
+                    % Get the Jacobian
+                    jacobian = self.get_jacobian(curr_joint_pos);
+
+                    % Calculate the fks with current joint values and extract
+                    % the 3x1 array of position [x; y; z]
+                    % Calculate the alpha and add that too
+                    fks = self.joints2fk(curr_joint_pos);
+                    alpha = curr_joint_pos(2) + curr_joint_pos(3) + curr_joint_pos(4);
+                    curr_task_pos = [transpose(fks(1:3, 4, 4)), alpha];
+
+                    % Extract the X Y Z of the Jacobian and add an
+                    % artificial row for the alpha (sum of 2nd, 3rd, and 4th
+                    % joints)
+                    % Invert the modified Jacobian and calculate how to adjust
+                    % the joint angles
+                    deltaQ = pinv([jacobian(1:3, :); 0, 1, 1, 1]) * transpose((target_task_pos - curr_task_pos));
+
+                    % Adjust the joint angles
+                    curr_joint_pos = curr_joint_pos + transpose(deltaQ);
+
+                    % Save the new joint position
+                    joint_positions = [joint_positions; curr_joint_pos];
+                end % Position deviation difference
+
+                > >> > >> > fe5ef65 (Fixed numerical inverse kinematics (finally))
+            end % Newton_Raphson_IK
+
+        end % end methods
+
+    end % end class
