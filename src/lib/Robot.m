@@ -459,10 +459,64 @@ classdef Robot < OM_X_arm
             TSvel = jacobian * transpose(deg2rad(inst_joint_vel));
         end % end vel2fdk
 
+        % Takes a 1x4 vector of target joint position [x, y, z, alpha]
+        % Returns a 1x4 vector of target joint angles over time
+        % Last set of angles will be the solution
+        function joint_positions = numerical_task2ik(self, target_task_pos)
+            % Set the max number of iterations (prevents hangups)
+            max_iterations = 3000;
+            iterations = 0;
+
+            % Read the 1x4 array of the current joint positions
+            % Used to "seed" the solver
+            curr_joint_var = self.read_joint_vars(true, false);
+            curr_joint_pos = curr_joint_var(1,:);
+            joint_positions = curr_joint_pos;
+
+            % Performs a fk with current joint values and gets the 3x1
+            % array of position [x; y; z]
+            % Calculate the alpha and add that too
+            fks = self.joints2fk(curr_joint_pos);
+            alpha = curr_joint_pos(2) + curr_joint_pos(3) + curr_joint_pos(4);
+            curr_task_pos = [transpose(fks(1:3,4,4)), alpha];
+
+            % Algorithm runs until the desired error tolerance is reached
+            while norm(target_task_pos - curr_task_pos) > 1e-1
+                % Get the Jacobian
+                jacobian = self.get_jacobian(curr_joint_pos); 
+
+                % Calculate the fks with current joint values and extract 
+                % the 3x1 array of position [x; y; z]
+                % Calculate the alpha and add that too
+                fks = self.joints2fk(curr_joint_pos); 
+                alpha = curr_joint_pos(2) + curr_joint_pos(3) + curr_joint_pos(4);
+                curr_task_pos = [transpose(fks(1:3,4,4)), alpha];
+
+                % Extract the X Y Z of the Jacobian and add an 
+                % artificial row for the alpha (sum of 2nd, 3rd, and 4th
+                % joints)
+                % Invert the modified Jacobian and calculate how to adjust
+                % the joint angles
+                deltaQ = pinv([jacobian(1:3,:); 0,1,1,1])*transpose((target_task_pos - curr_task_pos));
+                
+                % Adjust the joint angles
+                curr_joint_pos = curr_joint_pos + transpose(deltaQ);
+
+                % Save the new joint position
+                joint_positions = [joint_positions; curr_joint_pos];
+
+                % Increment the iterations and check if there's been too
+                % many
+                iterations = iterations + 1;
+                if (iterations >= max_iterations)
+                    error("Unable to solve inverse kinematics with numerical method")
+                end
+            end % Position deviation difference
+        end % numerical_task2ik
+
         % Check if the arm is close to entering a singularity
         % Returns the calculated determinant for debugging
         function jDet = prevent_singularity(self, jacobian)
-
             % Define a threshold for how close to zero the determinant can get before it's considered too close to a singularity
             threshold = 400000; % This value might need to be adjusted
 
