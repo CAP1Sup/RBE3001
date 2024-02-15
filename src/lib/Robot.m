@@ -404,24 +404,40 @@ classdef Robot < OM_X_arm
             TSvel = jacobian * transpose(inst_joint_vel);
         end % end vel2fdk
 
+        < << < << < HEAD
         % Takes a 1x3 vector of target joint position (x, y, z)
         % Returns a 1x4 vector of target joint angles
+        = == = == =
+        % Takes a 4x1 vector of target joint position [x; y; z; alpha]
+        % Returns a 1x4 vector of target joint angles
+        > >> > >> > e61fc55 (Newton - Raphson - IK - Algorithm fixed with a correct dimension)
+
         function final_joint_pos = Newton_Raphson_IK(self, target_task_pos)
-            % Gets the 1x4 array of the joint positions
+            % Reads the 1x4 array of the current joint positions
             % Used to "seed" the integration
             curr_joint_var = self.read_joint_vars(true, false);
             curr_joint_pos = curr_joint_var(1, :);
 
+            < << < << < HEAD
             % Performs a fk with current joint values and gets the 1x3
             % array of position
             fks = joints2fk(curr_joint_pos);
             curr_task_pos = transpose(fks(1:3, 4, 4));
+            = == = == =
+            % Performs a fk with current joint values and gets the 4x1
+            % array of position [x; y; z; alpha]
+            fks = self.joints2fk(curr_joint_pos);
+            alpha = curr_joint_pos(2) + curr_joint_pos(3) + curr_joint_pos(4);
+            curr_task_pos = fks(1:3, 4, 4);
+            curr_task_pos = [curr_task_pos; alpha];
+            > >> > >> > e61fc55 (Newton - Raphson - IK - Algorithm fixed with a correct dimension)
 
             % Algorithm runs until the desired error tolerance is reached
-            while norm(target_task_pos - curr_task_pos) > 1e-3
+            while norm(target_task_pos - curr_task_pos) > 1e-2
                 % Gets the Jacobian
                 jacobian = self.get_jacobian(curr_joint_pos);
 
+                < << < << < HEAD
                 % Performs a fk with current joint values and gets the 1x3
                 % array of position
                 fks = joints2fk(curr_joint_pos);
@@ -436,11 +452,32 @@ classdef Robot < OM_X_arm
                 deltaQ = pinv(jacobian(3, 1:3)) * (target_task_pos - curr_task_pos);
 
                 > >> > >> > 6d228b3 (Fixed Newton Raphson IK algorithm with a correct jacobian)
+                = == = == =
+                % Performs a fk with current joint values and gets the 4x1
+                % array of position [x; y; z; alpha]
+                fks = self.joints2fk(curr_joint_pos);
+                alpha = curr_joint_pos(2) + curr_joint_pos(3) + curr_joint_pos(4);
+                curr_task_pos = fks(1:3, 4, 4);
+                curr_task_pos = [curr_task_pos; alpha];
+
+                % Calculates the change in joint positions
+                % Gets the first 3x4 Jacobian (only x, y, z) with an extra
+                % row added to account for alpha
+                % Multiplies by a 4x1 pose vector and spits out a 4x1
+                deltaQ = pinv([jacobian(1:3, :); 0 1 1 1]) * (target_task_pos - curr_task_pos);
+
+                > >> > >> > e61fc55 (Newton - Raphson - IK - Algorithm fixed with a correct dimension)
                 % Updates the joint positions
-                curr_joint_pos = curr_joint_pos + deltaQ;
+                curr_joint_pos = curr_joint_pos + transpose(deltaQ);
             end
 
+            < << < << < HEAD
+
             % Read the joint angles after it reached the target position
+            = == = == =
+
+            % Reads the joint angles after it reached the target pose
+            > >> > >> > e61fc55 (Newton - Raphson - IK - Algorithm fixed with a correct dimension)
             final_joint_pos = self.read_joint_vars(true, false);
             final_joint_pos = final_joint_pos(1, :);
         end % Newton_Raphson_IK
