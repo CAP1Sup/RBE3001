@@ -1,8 +1,10 @@
 clc;
 clear;
+
+
 clc;
-robot = Robot();
-model = Model();
+%robot = Robot();
+%model = Model();
 try
     load("camParams.mat");
     disp("Loaded Camera Parameters from camParams.mat");
@@ -20,7 +22,7 @@ try
     disp(worldPt);
     R_0_checker = [ 0  1  0; 1  0  0; 0  0 -1];
     t_0_checker = [113; -70; 0];
-    T_0_check = [R_0_check, t_0_check;zeros(1,3), 1];
+    T_0_check = [R_0_checker, t_0_checker;zeros(1,3), 1];
     r_pos = inv(T_0_check) * [worldPt'; 0; 1];
 
 %     r_pos = centers_to_positions(r_pos(1:2)');
