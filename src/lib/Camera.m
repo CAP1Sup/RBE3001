@@ -32,7 +32,7 @@ classdef Camera < handle
             cam_pose = self.cam_pose;
         end
 
-        function cam_IS = getCameraInstrinsics(self)
+        function cam_IS = getCameraIntrinsics(self)
             cam_IS = self.cam_IS;
         end
 
