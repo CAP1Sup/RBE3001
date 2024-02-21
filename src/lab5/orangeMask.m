@@ -1,4 +1,4 @@
-function [BW,maskedRGBImage] = createMask(RGB)
+function [BW,maskedRGBImage] = orangeMask(RGB)
 %createMask  Threshold RGB image using auto-generated code from colorThresholder app.
 %  [BW,MASKEDRGBIMAGE] = createMask(RGB) thresholds image RGB using
 %  auto-generated code from the colorThresholder app. The colorspace and
@@ -14,12 +14,12 @@ function [BW,maskedRGBImage] = createMask(RGB)
 I = rgb2hsv(RGB);
 
 % Define thresholds for channel 1 based on histogram settings
-channel1Min = 0.184;
-channel1Max = 0.366;
+channel1Min = 0.043;
+channel1Max = 0.125;
 
 % Define thresholds for channel 2 based on histogram settings
-channel2Min = 0.298;
-channel2Max = 0.934;
+channel2Min = 0.450;
+channel2Max = 1.000;
 
 % Define thresholds for channel 3 based on histogram settings
 channel3Min = 0.000;
