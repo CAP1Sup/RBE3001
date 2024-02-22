@@ -113,5 +113,85 @@ classdef Camera < handle
             pose = [   R,    t';
                     0, 0, 0, 1];
         end
+
+        % Takes a given image and mask function
+        % Masks, erodes, and returns the regions left within the image
+        function poi = getObjects(~, image, maskFcn)
+            % Find the colors within the image
+            masked = maskFcn(image);
+        
+            % Remove the speckles that are left over
+            eroded = imerode(masked, strel("disk",2));
+        
+            % Get the properties of the remaining regions
+            % Also filters the regions with small areas (likely speckles)
+            regions = regionprops(eroded);
+            objects = [];
+            for index = 1:length(regions)
+                if (regions(index).Area > 10)
+                    objects = [objects; regions(index).Centroid, regions(index).Area];
+                end
+            end
+
+            % Return if there are no objects
+            if (size(objects) == 0)
+                poi = [];
+                return;
+            end
+
+            objects
+
+            % Sort the objects based on area
+            objects = sortrows(objects, 2);
+
+            % Drop the area off of the objects
+            poi = objects(:, 1);
+        end
+        
+        % Converts a 2D camera coordinate to a 3D checkboard coordinate
+        % Takes into account camera's angle of elevation and automatically
+        % adjusts for it
+        % If multiple points are specified, then the first one will be used
+        function coord = poiToCoord(self, poi)
+            if (size(poi, 2) == 0)
+                error("No point specified")
+            elseif (size(poi, 2) == 1)
+                worldPt = pointsToWorld(self.getCameraIntrinsics(), self.getRotationMatrix(), self.getTranslationVector(), poi);
+            else
+                worldPt = pointsToWorld(self.getCameraIntrinsics(), self.getRotationMatrix(), self.getTranslationVector(), poi(1,:));
+            end
+            R_0_checker = [ 0  1  0; -1  0  0; 0  0 -1];
+            t_0_checker = [90; 106; 0]; % Might need to be adjusted
+            T_0_check = [R_0_checker, t_0_checker;zeros(1,3), 1];
+            coord = inv(T_0_check) \ [worldPt'; 0; 1];
+        
+            % Coords are projected onto 2D checkerboard
+            % We know the size of the balls and the camera position
+            % Calculate the angle of elevation of the vector to the camera
+            % Then fix the coordinates by those values
+            ball_radius = 25/2;
+            camera_pos = [365, 0, 180]; % wrt to the robot arm origin
+        
+            % Variables for easier readability
+            x = 1;
+            y = 2;
+            z = 3;
+        
+            % Calculate the angle of elevation
+            % We can assume that the Z coordinate from camera conversion will be 0
+            angleOfElev = atan2(camera_pos(z), sqrt((camera_pos(x)-coord(x))^2 + (camera_pos(y)-coord(y))^2));
+        
+            % Calculate the angle in the XY plane
+            % Since camera is at Y=0, ignore it in the calculations
+            xyPlanarAngle = atan2(coord(y), camera_pos(x)-coord(x));
+        
+            % Correct the X and Y coordinates
+            correction = ball_radius / tan(angleOfElev);
+            coord(x) = coord(x) + correction * cos(xyPlanarAngle);
+            coord(y) = coord(y) - correction * sin(xyPlanarAngle);
+        
+            % Set the ball's radius in the coordinate
+            coord(z) = ball_radius;
+        end % poisToCoords
     end
 end
