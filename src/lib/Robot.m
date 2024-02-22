@@ -75,6 +75,9 @@ classdef Robot < OM_X_arm
             else
                 self.gripper.writePosition(55);
             end
+
+            % Give the gripper time to actually open/close
+            pause(1)
         end
 
         % Sets position holding for the joints on or off
@@ -304,7 +307,7 @@ classdef Robot < OM_X_arm
             q4 = alpha - q3 - q2;
 
             % Quick sanity check on the wrist angle
-            if abs(q4) > pi/2 + deg2rad(10)
+            if q4 > pi/2 + deg2rad(20) || q4 < -pi/2 - deg2rad(10)
                 error("Cannot be reached, wrist joint angle does not exist");
             end
 
@@ -420,6 +423,35 @@ classdef Robot < OM_X_arm
                 end % exists "joint_pos_data"
             end % toc <= move_dur
         end % run_trajectory_pos_vel
+
+        % Conveience function to generate the task space quintic trajectory coefficients
+        % Accepts a desired pose: [x,y,z,alpha] in mm and deg, respectively
+        % Also takes in a desired movement duration
+        % Returns the coefficients in order: a0, a1, a2...
+        function coeff = calc_quintic_t_coeff(self, desired_pose, move_time)
+            traj = Traj_Planner();
+            joint_data = self.read_joint_vars(true, false);
+            fks = self.joints2fk(joint_data(1,:));
+            coeff = zeros(4,6);
+            for index = 1:3 % X,Y,Z are easy
+                coeff(index, :) = transpose(traj.quintic_traj([0; fks(index,4,4); 0; 0], [move_time; desired_pose(1, index); 0; 0]));
+            end
+            % Alpha is a little harder
+            % Get the Euler angles from the end effector matrix
+            % Z should be the same as q1 and Y should be the alpha of the effector
+            % X should always be -90 deg... J3 Z axis is rotated to be horizontal
+            eulZYX = rad2deg(tform2eul(fks(:,:,4))); % [Z,Y,X]
+            coeff(4,:) = transpose(traj.quintic_traj([0; eulZYX(1,2); 0; 0], [move_time; desired_pose(1,4); 0; 0]));
+        end
+
+        % Executes a move to a desired pose in form: [x,y,z,alpha]
+        % Units are in mm and deg, respectively
+        % Also takes in the desired movement duration
+        % Moves to the given pose using a quintic trajectory
+        function quintic_move(self, desired_pose, travelTime)
+            coeffs = self.calc_quintic_t_coeff(desired_pose, travelTime);
+            self.run_trajectory(coeffs, travelTime, true);
+        end % quintic_move
 
         % Takes in in a 1x4 matrix of current joint angles (in deg)
         % Produces corresponding numeric 6x4 Jacobian matrix
