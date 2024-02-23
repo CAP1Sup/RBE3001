@@ -4,6 +4,7 @@ robot = Robot();
 try
     load("camParams.mat");
     disp("Loaded Camera Parameters from camParams.mat");
+    load("checker.mat")
 catch exception
     disp("Could not find camParams.mat, creating new Camera object");
     cam = Camera();
@@ -14,7 +15,16 @@ end
 % Define masks and their respective sorting destinations in form:
 % [mask function, [x,y,z]]
 % Alpha is assumed to be 90 deg (gripper vertical)
-possible_objects = {@yellowMask, [100, 210, 17.5]};
+possible_objects = {@yellowMask, [100, 210, 17.5];
+                    @orangeMask, [130, 190, 17.5];
+                    @RedMask, [100,210,17.5];
+                    @GreenMask [130,210,17.5];
+                    %@lightGreenMask, [-100,190,17.5];
+                    %@greyMask, [-140,210,17.5]}
+                    };
+
+
+checker = uint8(maskedRGBImage);
 
 % Named indexes for easier readability when using possible_objects
 mask_i = 1;
@@ -28,7 +38,7 @@ standby_pose = [130, 0, 130, 90]; % [mm, mm, mm, deg]
 % Will be used for all arm movements between points
 % Start out slow... then once we have it working...
 % MAXIMUM SPEED ;-)
-travelTime = 0.5; % s
+travelTime = 0.75; % s
 
 % Move to the home position
 % Standardizes starting position
@@ -40,24 +50,25 @@ robot.quintic_move(standby_pose, travelTime);
 robot.writeGripper(true);
 
 % Main interation loop
-for iter = 1:1
+for iter = 1:length(possible_objects)
     % Get an image from the camera
     image = cam.getImage();
     
+
     % Define variables to be used if the loop is successful
     coords = [];
     sort_pos = [];
     
     % Loop through masks, looking for objects
     for index = 1:length(possible_objects)
-        pois = cam.getObjects(image, possible_objects{mask_i});
+        pois = cam.getObjects(image, possible_objects{index,mask_i});
         if (size(pois, 2) > 0)
             coords = cam.poiToCoord(pois);
-            sort_pos = possible_objects{sort_pos_i};
+            sort_pos = possible_objects{index,sort_pos_i};
             break;
         end
     end
-    
+    % [bw, image] = createMask(image);
     % Check if there were any objects found
     if (size(coords) == 0)
         % None found... restart the loop
