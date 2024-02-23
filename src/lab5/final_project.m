@@ -28,7 +28,7 @@ standby_pose = [130, 0, 130, 90]; % [mm, mm, mm, deg]
 % Will be used for all arm movements between points
 % Start out slow... then once we have it working...
 % MAXIMUM SPEED ;-)
-travelTime = 5; % s
+travelTime = 0.5; % s
 
 % Move to the home position
 % Standardizes starting position
@@ -75,7 +75,7 @@ for iter = 1:1
 
     % Lower down and pick up the ball
     coords(3) = coords(3) - 15; % Should be 15 mm above the ball's coords
-    robot.simple_quintic_move(transpose(coords), 1);
+    robot.simple_quintic_move(transpose(coords), 0.5);
     robot.writeGripper(false);
 
     % Return to the standby pose

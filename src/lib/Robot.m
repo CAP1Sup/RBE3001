@@ -72,15 +72,27 @@ classdef Robot < OM_X_arm
         % Feel free to change values for open and closed positions as desired (they are in degrees)
         % open [boolean] - true to set the gripper to open, false to close
         function writeGripper(self, open)
+            < << < << < HEAD
 
-            if open
-                self.gripper.writePosition(-35);
+            = == = == =
+            readings = self.gripper.getJointReadings();
+            curr_pos = readings(1);
+            > >> > >> > ce53424 (Speed ... I am speed)
+
+                if open
+                desired_pos = -35;
             else
-                self.gripper.writePosition(55);
+                desired_pos = 55;
             end
 
-            % Give the gripper time to physically open/close
-            pause(1)
+            % Check if we actually need to move
+            if (abs(curr_pos - desired_pos) > 5)
+                self.gripper.writePosition(desired_pos);
+
+                % Give the gripper time to physically open/close
+                pause(0.5)
+            end % If we actually need to move
+
         end
 
         % Sets position holding for the joints on or off
