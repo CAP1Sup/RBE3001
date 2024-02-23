@@ -14,7 +14,7 @@ end
 % Define masks and their respective sorting destinations in form:
 % [mask function, [x,y,z]]
 % Alpha is assumed to be 90 deg (gripper vertical)
-possible_objects = {@yellowMask, [130, 210, 15]};
+possible_objects = {@yellowMask, [100, 210, 17.5]};
 
 % Named indexes for easier readability when using possible_objects
 mask_i = 1;
@@ -50,10 +50,10 @@ for iter = 1:1
     
     % Loop through masks, looking for objects
     for index = 1:length(possible_objects)
-        pois = cam.getObjects(image, possible_objects{mask_i})
+        pois = cam.getObjects(image, possible_objects{mask_i});
         if (size(pois, 2) > 0)
-            coords = cam.poiToCoord(pois)
-            sort_pos = possible_objects{sort_pos_i}
+            coords = cam.poiToCoord(pois);
+            sort_pos = possible_objects{sort_pos_i};
             break;
         end
     end
@@ -65,25 +65,29 @@ for iter = 1:1
     end
 
     % Adjust the Z value of the coordinates (robot arm would crash)
-    coords(3) = coords(3) + 15;
+    coords(3) = coords(3) + 30;
 
     % Set the alpha of the coords to be 90 (wrist down)
     coords(4) = 90;
 
-    % An object was found... pick it up
-    robot.quintic_move(coords, travelTime);
+    % Move to above the ball
+    robot.simple_quintic_move(transpose(coords), travelTime);
+
+    % Lower down and pick up the ball
+    coords(3) = coords(3) - 15; % Should be 15 mm above the ball's coords
+    robot.simple_quintic_move(transpose(coords), 1);
     robot.writeGripper(false);
 
     % Return to the standby pose
-    robot.quintic_move(standby_pose, travelTime);
+    robot.simple_quintic_move(standby_pose, travelTime);
 
     % Move to the sort position of the object
-    robot.quintic_move([sort_pos, 90], travelTime);
+    robot.simple_quintic_move([sort_pos, 90], travelTime);
 
     % Drop the object
     robot.writeGripper(true);
 
     % Return to the standby position
-    robot.quintic_move(standby_pose, travelTime);
+    robot.simple_quintic_move(standby_pose, travelTime);
 
 end % main iteration loop

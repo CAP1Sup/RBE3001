@@ -139,13 +139,11 @@ classdef Camera < handle
                 return;
             end
 
-            objects
-
             % Sort the objects based on area
-            objects = sortrows(objects, 2);
+            objects = sortrows(objects, 3);
 
             % Drop the area off of the objects
-            poi = objects(:, 1);
+            poi = objects(:, 1:2);
         end
         
         % Converts a 2D camera coordinate to a 3D checkboard coordinate
@@ -160,8 +158,10 @@ classdef Camera < handle
             else
                 worldPt = pointsToWorld(self.getCameraIntrinsics(), self.getRotationMatrix(), self.getTranslationVector(), poi(1,:));
             end
-            R_0_checker = [ 0  1  0; -1  0  0; 0  0 -1];
-            t_0_checker = [90; 106; 0]; % Might need to be adjusted
+            R_0_checker = [0  1  0;
+                           1  0  0;
+                           0  0 -1];
+            t_0_checker = [95; -117; 0]; % Might need to be adjusted
             T_0_check = [R_0_checker, t_0_checker;zeros(1,3), 1];
             coord = inv(T_0_check) \ [worldPt'; 0; 1];
         
