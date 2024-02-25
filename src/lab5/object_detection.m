@@ -12,6 +12,6 @@ image = cam.getImage();
 "CheckerBoard:  " 
 "Yellow coords:  " + num2str(reshape(cam.poiToCoord(cam.getObjects(image, @yellowMask))', 1, []))
 "Orange coords:  " + num2str(reshape(poiToCoord(cam, getObjects(image, @orangeMask))', 1, []))
-"Red coords:  " + num2str(reshape(poiToCoord(cam, getObjects(image, @RedMask))', 1, []))
-"Green coords:  " + num2str(reshape(poiToCoord(cam, getObjects(image, @GreenMask))', 1, []))
+"Red coords:  " + num2str(reshape(poiToCoord(cam, getObjects(image, @redMask))', 1, []))
+"Green coords:  " + num2str(reshape(poiToCoord(cam, getObjects(image, @greenMask))', 1, []))
 "Light Green coords:  " + num2str(reshape(poiToCoord(cam, getObjects(image, @lightGreenMask))', 1, []))

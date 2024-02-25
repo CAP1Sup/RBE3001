@@ -121,7 +121,7 @@ classdef Camera < handle
             masked = maskFcn(image);
         
             % Remove the speckles that are left over
-            eroded = imerode(masked, strel("disk",2));
+            eroded = imerode(masked, strel("disk",4));
         
             % Get the properties of the remaining regions
             % Also filters the regions with small areas (likely speckles)
@@ -161,7 +161,7 @@ classdef Camera < handle
             R_0_checker = [0  1  0;
                            1  0  0;
                            0  0 -1];
-            t_0_checker = [95; -117; 0]; % Might need to be adjusted
+            t_0_checker = [100; -112; 0]; % Might need to be adjusted
             T_0_check = [R_0_checker, t_0_checker;zeros(1,3), 1];
             coord = inv(T_0_check) \ [worldPt'; 0; 1];
         
@@ -185,11 +185,17 @@ classdef Camera < handle
             % Since camera is at Y=0, ignore it in the calculations
             xyPlanarAngle = atan2(coord(y), camera_pos(x)-coord(x));
         
-            % Correct the X and Y coordinates
+            % Correct the X
             correction = ball_radius / tan(angleOfElev);
             coord(x) = coord(x) + correction * cos(xyPlanarAngle);
-            coord(y) = coord(y) - correction * sin(xyPlanarAngle);
-        
+
+            % Correct the Y
+            if (coord(y) > 0)
+                coord(y) = coord(y) - correction * sin(xyPlanarAngle);
+            else
+                coord(y) = coord(y) + correction * sin(xyPlanarAngle);
+            end
+
             % Set the ball's radius in the coordinate
             coord(z) = ball_radius;
         end % poisToCoords
