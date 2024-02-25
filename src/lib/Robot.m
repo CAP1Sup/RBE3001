@@ -392,6 +392,19 @@ classdef Robot < OM_X_arm
                     joint_pos_data = [time, joint_pos(1,:)];
                 end % exists "joint_pos_data"
             end % toc <= move_dur
+
+            % Wait for the joints if they are lagging behind
+            j_out_of_tol = 4;
+            while (j_out_of_tol > 0)
+                j_out_of_tol = 0;
+                joint_pos = self.read_joint_vars(true,false);
+                for index = 1:length(joint_vals)
+                    if(abs(joint_vals(index)-joint_pos(1,index)) > 5)
+                        j_out_of_tol = j_out_of_tol + 1;
+                    end
+                end
+                pause(0.01);
+            end
         end % run_trajectory
 
         % Takes 4x4 matrix of trajectory coefficients, with joints or task

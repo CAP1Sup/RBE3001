@@ -15,21 +15,22 @@ end
 % Define masks and their respective sorting destinations in form:
 % [mask function, [x,y,z]]
 % Alpha is assumed to be 90 deg (gripper vertical)
-possible_objects = {@yellowMask, [100, 210, 17.5];
-                    @orangeMask, [130, 190, 17.5];
-                    @RedMask, [100,210,17.5];
-                    @GreenMask [130,210,17.5];
-                    %@lightGreenMask, [-100,190,17.5];
-                    %@greyMask, [-140,210,17.5]}
-                    };
-
-
-checker = uint8(maskedRGBImage);
+possible_objects = {@yellowMask, [250, 140, 50.5];
+                    @redMask, [250,70,45.5];
+                    @greenMask [250,-70,40.5];
+                    @orangeMask, [250, -140, 50.5];
+                    @lightGreenMask, [100,190,50.5];
+                    %@greyMask, [-140,210,17.5]
+                    } ;
+%coordinates of the checkerboard
+x = [412 848 1000 295];
+y = [323 318 495 512];
 
 % Named indexes for easier readability when using possible_objects
 mask_i = 1;
 sort_pos_i = 2;
-
+% binary that only takes in the checkerboard coords
+BW = poly2mask(x,y,642,1080);
 % Define a standby pose
 % Arm will wait here until an object is detected
 standby_pose = [130, 0, 130, 90]; % [mm, mm, mm, deg]
@@ -38,7 +39,7 @@ standby_pose = [130, 0, 130, 90]; % [mm, mm, mm, deg]
 % Will be used for all arm movements between points
 % Start out slow... then once we have it working...
 % MAXIMUM SPEED ;-)
-travelTime = 0.75; % s
+travelTime = 0.5; % s
 
 % Move to the home position
 % Standardizes starting position
@@ -50,10 +51,12 @@ robot.quintic_move(standby_pose, travelTime);
 robot.writeGripper(true);
 
 % Main interation loop
-for iter = 1:length(possible_objects)
+while (true)
     % Get an image from the camera
-    image = cam.getImage();
-    
+    image = cam.getImage;
+
+    % Mask out everything but the checkerboard
+    image = bsxfun(@times, image, cast(BW,'like',image));
 
     % Define variables to be used if the loop is successful
     coords = [];
@@ -68,37 +71,38 @@ for iter = 1:length(possible_objects)
             break;
         end
     end
-    % [bw, image] = createMask(image);
-    % Check if there were any objects found
-    if (size(coords) == 0)
-        % None found... restart the loop
+
+    % If there were no objects, restart the loop
+    if (size(coords, 2) == 0)
+        robot.simple_quintic_move(standby_pose, travelTime);
         continue;
     end
 
     % Adjust the Z value of the coordinates (robot arm would crash)
-    coords(3) = coords(3) + 30;
+    coords(3) = coords(3) + 50;
 
     % Set the alpha of the coords to be 90 (wrist down)
     coords(4) = 90;
-
+    
     % Move to above the ball
     robot.simple_quintic_move(transpose(coords), travelTime);
 
     % Lower down and pick up the ball
-    coords(3) = coords(3) - 15; % Should be 15 mm above the ball's coords
+    coords(3) = coords(3) - 35; % Should be 15 mm above the ball's coords
     robot.simple_quintic_move(transpose(coords), 0.5);
     robot.writeGripper(false);
 
-    % Return to the standby pose
-    robot.simple_quintic_move(standby_pose, travelTime);
+    % Move upwards to clear the balls
+    coords(3) = coords(3) + 50;
+    robot.simple_quintic_move(transpose(coords), travelTime);
 
     % Move to the sort position of the object
-    robot.simple_quintic_move([sort_pos, 90], travelTime);
+    robot.simple_quintic_move([sort_pos, 60], travelTime);
 
     % Drop the object
     robot.writeGripper(true);
 
-    % Return to the standby position
-    robot.simple_quintic_move(standby_pose, travelTime);
-
+    % Move up above the sort position
+    sort_pos(3) = sort_pos(3) + 20;
+    robot.simple_quintic_move([sort_pos, 60], travelTime);
 end % main iteration loop
