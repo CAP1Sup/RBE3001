@@ -4,7 +4,6 @@ robot = Robot();
 try
     load("camParams.mat");
     disp("Loaded Camera Parameters from camParams.mat");
-    load("checker.mat")
 catch exception
     disp("Could not find camParams.mat, creating new Camera object");
     cam = Camera();
@@ -29,8 +28,10 @@ y = [323 318 495 512];
 % Named indexes for easier readability when using possible_objects
 mask_i = 1;
 sort_pos_i = 2;
+
 % binary that only takes in the checkerboard coords
 BW = poly2mask(x,y,642,1080);
+
 % Define a standby pose
 % Arm will wait here until an object is detected
 standby_pose = [130, 0, 130, 90]; % [mm, mm, mm, deg]
@@ -39,7 +40,7 @@ standby_pose = [130, 0, 130, 90]; % [mm, mm, mm, deg]
 % Will be used for all arm movements between points
 % Start out slow... then once we have it working...
 % MAXIMUM SPEED ;-)
-travelTime = 0.5; % s
+travelTime = 1; % s
 
 % Move to the home position
 % Standardizes starting position
@@ -57,6 +58,7 @@ while (true)
 
     % Mask out everything but the checkerboard
     image = bsxfun(@times, image, cast(BW,'like',image));
+    imshow(image);
 
     % Define variables to be used if the loop is successful
     coords = [];
@@ -105,4 +107,5 @@ while (true)
     % Move up above the sort position
     sort_pos(3) = sort_pos(3) + 20;
     robot.simple_quintic_move([sort_pos, 60], travelTime);
+    
 end % main iteration loop
